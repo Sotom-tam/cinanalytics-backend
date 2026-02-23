@@ -13,7 +13,7 @@ const app=express()
 
 app.use(express.json())
 app.use(cors({
-    origin:["http://127.0.0.1:3001","http://127.0.0.1:5500","http://127.0.0.1:3000","http://localhost:5173"],
+    origin:["https://cin-analytics.vercel.app","https://cin-analytics.vercel.app/verify","http://127.0.0.1:3001","http://127.0.0.1:5500","http://127.0.0.1:3000","http://localhost:5173"],
     credentials:true
 }))
 const pgSession=connectSession(session)
