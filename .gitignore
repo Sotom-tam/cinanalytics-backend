@@ -1,0 +1,64 @@
+# ----------------------------
+# OS generated files
+# ----------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ----------------------------
+# Logs
+# ----------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ----------------------------
+# Dependency directories
+# ----------------------------
+node_modules/
+vendor/
+bower_components/
+
+# ----------------------------
+# Environment variables
+# ----------------------------
+.env
+.env.*
+!.env.example
+
+# ----------------------------
+# Build / output folders
+# ----------------------------
+dist/
+build/
+out/
+coverage/
+.cache/
+.tmp/
+temp/
+
+# ----------------------------
+# IDE / Editor files
+# ----------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+
+# ----------------------------
+# Package manager files (optional — remove if you commit them)
+# ----------------------------
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# ----------------------------
+# Misc
+# ----------------------------
+*.tgz
+*.zip
+*.tar
+*.gz
