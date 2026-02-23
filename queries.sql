@@ -75,3 +75,20 @@ FROM events
 GROUP BY LEFT(feature_key, 9)
 ORDER BY event_count DESC;
 
+CREATE TABLE magic_tokens(
+	id SERIAL NOT NULL PRIMARY KEY,
+	user_id INT REFERENCES users(id), 
+	token_hash TEXT,
+	expires_at TEXT,
+	used BOOLEAN
+);
+
+CREATE TABLE otp(
+	id SERIAL NOT NULL PRIMARY KEY,
+	email TEXT,
+	otp_hash TEXT,
+	otp_expires TEXT,
+	attempts INT
+);
+
+
