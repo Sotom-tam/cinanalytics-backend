@@ -2,8 +2,8 @@ import bcrypt from "bcrypt"
 import crypto from "crypto"
 import { Resend } from "resend"
 import {getUserByEmail,storeUserEmail,storeMagicToken,getTokenByUserId,storeOtp,getOtpByEmail,deleteOtp} from "../model/authModel.js"
-
-const resend= new Resend('re_XfhZNgJ9_AYd1MJmBo6u6rAaexunbBykr')
+//console.log("ENV CHECK:", process.env.RESEND_API_KEY);
+const resend= new Resend(process.env.RESEND_API_KEY)
 
 export async function sendUserEmail(email){
     const userId=storeUserEmail()

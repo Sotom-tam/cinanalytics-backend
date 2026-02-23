@@ -8,12 +8,13 @@ export async function storeUserEmail(email){
 export async function getUserByEmail(email){
     const result =await pool.query(`SELECT * FROM users WHERE email=$1`,[email])
     if(result.rows.length>0){
+        //console.log(result.rows[0])
         return result.rows[0]
     }else{
         return "User not Found"
     }
 }
-
+getUserByEmail("email@gmail.com")
 export async function storeMagicToken(user_id,token){
     const result =await pool.query(`INSERT INTO magic_tokens (user_id,token_hash)
         VALUES ($1,$2) RETURNING *`,[user_id,token])

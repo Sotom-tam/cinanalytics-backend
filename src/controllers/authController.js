@@ -73,7 +73,7 @@ export async function sendOtp(req, res, next) {
     const { email } = req.body;
 
     const user = await getUserByEmail(email);
-
+    console.log("LOGIN USER:", user);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -83,9 +83,7 @@ export async function sendOtp(req, res, next) {
 
     req.login(user, async (err) => {
       if (err) return next(err);
-
       await sendVerificationEmail(user.email);
-
       return res.status(200).json({
         success: true,
         message: "OTP sent successfully",

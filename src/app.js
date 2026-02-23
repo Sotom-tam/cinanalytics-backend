@@ -1,5 +1,5 @@
-import dotenv from "dotenv"
-dotenv.config()
+import "dotenv/config"
+
 
 import express from "express"
 import cors from "cors"
@@ -22,7 +22,7 @@ app.use(session({
         pool:pool,
         tableName:"sessions"
     }),
-    secret: "TOPSECRET",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie:{maxAge:1000*60*60}
