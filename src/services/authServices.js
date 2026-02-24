@@ -27,7 +27,7 @@ export async function genMagicToken(email){
 export async function sendMagicLink(email, token) {
     //console.log(email,token)
   try {
-    const magicLink = `https://cin-analytics.vercel.app/verify.html/verify?token=${token}&email=${email}`;
+    const magicLink = `https://cin-analytics.vercel.app/verify.html?token=${token}&email=${email}`;
 
     const response = await sendEmail({
       to: email,
