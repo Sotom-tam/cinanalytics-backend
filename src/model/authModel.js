@@ -69,9 +69,9 @@ export const deleteMagicToken = async (email) => {
 
 export async function storeOtp(email,otpHash) {
     console.log(email,otpHash)
-    const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    //const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
     try {
-        const result =await pool.query(`INSERT INTO otp_tokens (email,otp_hash,expires) VALUES($1,$2,$3) RETURNING *;`,[email,otpHash,expires])
+        const result =await pool.query(`INSERT INTO otp_tokens (email,otp_hash,expires) VALUES($1,$2,NOW() + INTERVAL '15 minutes') RETURNING *;`,[email,otpHash])
         if(result.rows.length>0){
             return result.rows[0]
         }

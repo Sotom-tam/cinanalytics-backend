@@ -141,6 +141,7 @@ export const verifyOtp = async (req, res, next) => {
         message: "OTP is required",
       });
     }
+    console.log(req.user)
     let email = await getUserById(req.user);
     // 4️⃣ Call service to verify
     if(!email){
