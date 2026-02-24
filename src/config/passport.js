@@ -26,7 +26,7 @@ passport.use(
 passport.use("google",new GoogleStrategy({
   clientID: process.env.GOOGLECLIENTID,
   clientSecret:process.env.GOOGLECLIENTSECRET,
-	callbackURL:"/api/auth/google/callback"
+	callbackURL:"https://cinanalytics-backend.onrender.com/api/auth/google/callback"
   },
     async (accessToken,refreshToken,profile, cb) => {
       try {

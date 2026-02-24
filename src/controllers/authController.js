@@ -13,7 +13,7 @@ export async function getUserData(req,res){
   if(user){
     return res.status(200).json(user)
   }else{
-    return res.status(404).json({message:"User not Found",success:false})
+    return res.status(401).json({message:"User not Found",success:false})
   }
   }else{
     const userId=req.query.id

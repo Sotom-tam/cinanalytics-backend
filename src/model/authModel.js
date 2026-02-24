@@ -116,4 +116,5 @@ export async function updateUser(email,name,picture){
         picture_url = $2
         WHERE email = $3 RETURNING *; `,[name,picture,email]
     )
+    return result.rows[0]
 }
