@@ -4,6 +4,7 @@ import {getUserByEmail,} from "../model/authModel.js"
 import passport from "../config/passport.js"
 
 export const googleAuth = passport.authenticate("google", {
+  failureRedirect: `${process.env.FRONTEND_URL}`,
   scope: ["profile", "email"],
 });
 export const googleCallback = [

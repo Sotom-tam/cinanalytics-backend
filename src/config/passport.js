@@ -23,7 +23,7 @@ passport.use(
 	}),
 );
 
-passport.use("google",{ failureRedirect: `${process.env.FRONTEND_URL}`},new GoogleStrategy({
+passport.use("google",new GoogleStrategy({
   clientID: process.env.GOOGLECLIENTID,
   clientSecret:process.env.GOOGLECLIENTSECRET,
 	callbackURL:"/api/auth/google/callback"
