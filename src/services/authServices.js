@@ -63,19 +63,19 @@ export async function sendVerificationEmail(email){
     const storedOtp=await storeOtp(email,otpHash)
     if(storedOtp){
         const response=await verficationEmail(email,otp)
-        console.log(response)
+        //console.log(response)
         return (response)
     }
 }
 export async function genOtp(){
-    const otp=Math.floor(100000+Math.random()*999999)
+    const otp=Math.floor(100000+Math.random()*900000)
     return otp
 }
 export async function verficationEmail(email,otp){
   const response=  await sendEmail({
     to: email,
     subject: "Your OTP Code",
-    text: `<h2>Your OTP is ${otp}</h2>`,
+    text: `Your OTP is ${otp}`,
   });
     return response
 }

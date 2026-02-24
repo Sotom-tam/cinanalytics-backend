@@ -3,7 +3,7 @@ import pool from "../db.js"
 export async function storeUserEmail(email){
     console.log("model",email)
     const result =await pool.query('INSERT INTO users (email) VALUES ($1) RETURNING *;',[email])
-    console.log(result)
+    //console.log(result)
     const user=result.rows[0]
     return user
 }
