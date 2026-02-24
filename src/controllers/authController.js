@@ -108,7 +108,6 @@ export async function verify(req,res,next){
 export async function sendOtp(req, res, next) {
   try {
     const email = req.body.email;
-    req.session.pendingEmail = email;
     console.log(email)
     const user = await getUserByEmail(email);
     console.log("LOGIN USER:", user);
@@ -118,16 +117,13 @@ export async function sendOtp(req, res, next) {
         message: "User not found",
       });
     }
+    req.session.pendingEmail = email;
 
-    req.login(user, async (err) => {
-      if (err) return next(err);
-      await sendVerificationEmail(user.email);
-      return res.status(200).json({
+    await sendVerificationEmail(user.email);
+    return res.status(200).json({
         success: true,
         message: "OTP sent successfully",
       });
-    });
-
   } catch (err) {
     next(err);
   }
@@ -142,17 +138,27 @@ export const verifyOtp = async (req, res, next) => {
         message: "OTP is required",
       });
     }
-    console.log(req.user)
-    let email = await getUserById(req.session.pendingEmail);
+    //console.log(req.user)
+    const email=req.session.pendingEmail
+    const user = await getUserByEmail(email);
     // 4️⃣ Call service to verify
     if(!email){
-      email="sotomtamunowari@gmail.com"
       console.log("email not found")
+      return res.status(400).json({
+        success: false,
+        message: "Session expired. Please login again.",
+      });
     }
-    const result = await verifyOtpService(email, otp);
-    return res.status(200).json({
-      success: true,
-      message: result.message,
+    const result = await verifyOtpService(user.email, otp);
+    req.login(user, (err) => {
+      if (err) return next(err);
+
+      delete req.session.pendingEmail;
+
+      return res.status(200).json({
+        success: true,
+        message: result.message,
+      });
     });
 
   } catch (error) {
