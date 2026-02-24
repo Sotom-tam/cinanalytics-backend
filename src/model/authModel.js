@@ -15,7 +15,7 @@ export async function getUserByEmail(email){
         
         return result.rows[0]
     }else{
-        return "User not Found"
+        return false
     }
 }
 getUserByEmail("email@gmail.com")
