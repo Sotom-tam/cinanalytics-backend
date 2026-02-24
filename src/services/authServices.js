@@ -5,7 +5,7 @@ import {getUserByEmail,storeUserEmail,storeMagicToken,getTokenByUserId,storeOtp,
 
 
 export async function sendUserEmail(email){
-    const userId=storeUserEmail()
+    const userId=await storeUserEmail()
     if(userId){
         return userId
     }
@@ -55,7 +55,7 @@ export async function findTokenByEmail(email){
     const userId= user.id
     const magicTokens = await getTokenByUserId(userId)
     console.log(magicTokens)
-    return magicTokens.token_hash
+    return magicTokens
 }
 export async function sendVerificationEmail(email){
     const otp= await genOtp();
@@ -81,6 +81,7 @@ export async function verficationEmail(email,otp){
 }
 
 export const verifyOtpService= async (email, otp) => {
+  console.log(email)
   const record = await getOtpByEmail(email);
 
   if (!record) {
@@ -91,8 +92,11 @@ export const verifyOtpService= async (email, otp) => {
   if (!isMatch) {
     throw new Error("Invalid OTP");
   }
+  if (new Date() > record.expires) {
+    await deleteOtp(email); // remove expired OTP
+    throw new Error("OTP expired");
+  }
   // OTP is valid → remove it
   await deleteOtp(email);
-
   return { message: "OTP verified successfully",success:true };
 };

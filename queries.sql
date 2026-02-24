@@ -91,4 +91,24 @@ CREATE TABLE otp(
 	attempts INT
 );
 
+ALTER TABLE users
+ADD  name TEXT;
+
+CREATE TABLE otp_tokens(
+	id SERIAL NOT NULL PRIMARY KEY,
+	email TEXT,
+	otp_hash TEXT NOT NULL,
+	expires TIMESTAMP NOT NULL,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE magic_tokens(
+	id SERIAL NOT NULL PRIMARY KEY,
+	user_id INT REFERENCES user(id) NOT NULL,
+	token_hash TEXT NOT NULL,
+	expires TIMESTAMP NOT NULL,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
 

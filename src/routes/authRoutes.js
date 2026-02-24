@@ -1,7 +1,7 @@
 
 import {Router} from "express"
 
-import {requestMagicLink,verify,googleAuth,googleCallback,sendOtp,verifyOtp}from "../controllers/authController.js"
+import {requestMagicLink,verify,googleAuth,googleCallback,sendOtp,verifyOtp,getUserData}from "../controllers/authController.js"
 
 const router=Router()
 
@@ -11,6 +11,6 @@ router.post("/send-otp",sendOtp)
 router.post("/verify-otp",verifyOtp)
 router.get("/google",googleAuth)
 router.get("/google/callback",googleCallback)
-
+router.get("/get-user-data",getUserData)
 
 export default router

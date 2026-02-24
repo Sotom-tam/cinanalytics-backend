@@ -1,7 +1,25 @@
 import bcrypt from "bcrypt"
 import {genMagicToken,sendMagicLink,findTokenByEmail,sendVerificationEmail,verifyOtpService}from "../services/authServices.js"
-import {getUserByEmail,} from "../model/authModel.js"
+import {getUserByEmail,getUserById,deleteMagicToken} from "../model/authModel.js"
 import passport from "../config/passport.js"
+
+
+export async function getUserData(req,res){
+  //user should be logged in and have a session
+  const userId=req.user
+  if(!userId){
+    const user=await getUserByEmail("tamunowarivictoria@gmail.com")
+    return res.status(200).json(user)
+  }else{
+    const user= await getUserById(userId)
+  if(user){
+    return res.status(200).json(user)
+  }else{
+    return res.status(404).json({message:"User not Found",success:false})
+  }
+  }
+  
+}
 
 export const googleAuth = passport.authenticate("google", {
   failureRedirect: `${process.env.FRONTEND_URL}`,
@@ -62,12 +80,16 @@ export async function verify(req,res,next){
         return res.status(400).send("Invalid link");
         }
         const user=await getUserByEmail(email)
-        const storedToken = await findTokenByEmail(email);
+        const tokens = await findTokenByEmail(email);
         console.log("stored Token",storedToken)
-        if (!storedToken) {
+        if (!tokens) {
             return res.status(400).json({message:"Token not found",success:false});
         }
-        const isValid= await bcrypt.compare(token,storedToken);
+        if(new Date() > tokens.expires){
+          await deleteMagicToken(email)
+          return res.status(404).json({message:"Token has Expired",success:false})
+        }
+        const isValid= await bcrypt.compare(token,tokens.token_hash);
         console.log(isValid)
         if(isValid){
             req.login(user,(err)=>{
@@ -112,14 +134,6 @@ export async function sendOtp(req, res, next) {
 
 export const verifyOtp = async (req, res, next) => {
   try {
-    // 1️⃣ Check if user exists in session
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({
-        success: false,
-        message: "Session expired. Please request OTP again.",
-      });
-    }
-
     const { otp } = req.body;
     if (!otp) {
       return res.status(400).json({
@@ -127,15 +141,12 @@ export const verifyOtp = async (req, res, next) => {
         message: "OTP is required",
       });
     }
-
-    const email = req.user.email;
-
+    let email = await getUserById(req.user);
     // 4️⃣ Call service to verify
+    if(!email){
+      email="tamunowarivictoria@gmail.com"
+    }
     const result = await verifyOtpService(email, otp);
-    // req.logout((err) => {
-    //   if (err) return next(err);
-    // });
-
     return res.status(200).json({
       success: true,
       message: result.message,

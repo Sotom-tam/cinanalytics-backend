@@ -3,7 +3,7 @@ import pool from "../db.js";
 import bcrypt from "bcrypt";
 import { Strategy as LocalStrategy } from "passport-local"
 import GoogleStrategy from "passport-google-oauth20";
-import { storeUserEmail,getUserByEmail } from "../model/authModel.js";
+import { storeUserEmail,getUserByEmail,storeUserData } from "../model/authModel.js";
 
 passport.use(
 	"local",
@@ -30,14 +30,14 @@ passport.use("google",new GoogleStrategy({
   },
     async (accessToken,refreshToken,profile, cb) => {
       try {
-        //console.log(profile);
+        console.log(profile,profile.displayName,profile.photos[0].value);
         const email = profile.emails?.[0]?.value;
         const isUser=await getUserByEmail(email)
         if(isUser){
           return cb(null, isUser);
         }
         else{
-          const user = await storeUserEmail(email)
+          const user = await storeUserData(email,profile.displayName,profile.photos[0].value)
           console.log(email,user)
           if (user) {
             return cb(null, user);
