@@ -108,6 +108,7 @@ export async function verify(req,res,next){
 export async function sendOtp(req, res, next) {
   try {
     const email = req.body.email;
+    req.session.pendingEmail = email;
     console.log(email)
     const user = await getUserByEmail(email);
     console.log("LOGIN USER:", user);
@@ -142,10 +143,11 @@ export const verifyOtp = async (req, res, next) => {
       });
     }
     console.log(req.user)
-    let email = await getUserById(req.user);
+    let email = await getUserById(req.session.pendingEmail);
     // 4️⃣ Call service to verify
     if(!email){
       email="sotomtamunowari@gmail.com"
+      console.log("email not found")
     }
     const result = await verifyOtpService(email, otp);
     return res.status(200).json({

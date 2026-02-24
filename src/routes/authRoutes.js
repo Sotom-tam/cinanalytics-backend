@@ -11,6 +11,6 @@ router.post("/send-otp",sendOtp)
 router.post("/verify-otp",verifyOtp)
 router.get("/google",googleAuth)
 router.get("/google/callback",googleCallback)
-router.get("/get-user-data",getUserData)
+router.get("/get-user",getUserData)
 
 export default router
