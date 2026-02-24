@@ -10,6 +10,7 @@ import eventRoutes from "./routes/eventRoutes.js"
 import connectSession from "connect-pg-simple"
 import pool from "./db.js"
 const app=express()
+app.set("trust proxy", 1);
 
 app.use(express.json())
 app.use(cors({
