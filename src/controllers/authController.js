@@ -31,9 +31,10 @@ export async function requestMagicLink(req, res) {
     console.log(email)
     // generate secure token
     const token =await genMagicToken(email);
-    console.log(token)
+    //console.log(token)
     // TODO: store hashed token in DB here
     // send email
+    console.log("sendingmagicLink")
     const response=await sendMagicLink(email, token);
     console.log(response)
     res.json({ message: "Magic link sent" });
