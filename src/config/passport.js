@@ -36,10 +36,12 @@ passport.use("google",new GoogleStrategy({
         const isUser=await getUserByEmail(email)
         if(isUser){
           const user=await updateUser(email,name,picture)
+          console.log("EXISTING USER RETURNED:", user);
           return cb(null, user);
         }
         else{
           const user = await storeUserData(email,name,picture)
+          console.log("NEW USER RETURNED:", user)
           console.log(email,user)
           if (user) {
             return cb(null, user);
