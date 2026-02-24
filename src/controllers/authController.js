@@ -9,7 +9,8 @@ export const googleAuth = passport.authenticate("google", {
 export const googleCallback = [
     passport.authenticate("google"),
     (req, res) => {
-    res.status(200).json({message:"User Login Successful",success:true});
+    // passport already stored user in session via serializeUser
+    return res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
   },
 ];
 export async function login(req,res,next){
@@ -24,7 +25,7 @@ export async function login(req,res,next){
     })     
 }
 export async function requestMagicLink(req, res) {
-  console.log("controller,",req.body)
+  //console.log("controller,",req.body)
   try {
     const email  = req.body.email;
     console.log(email)

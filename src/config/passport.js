@@ -23,11 +23,11 @@ passport.use(
 	}),
 );
 
-passport.use("google",new GoogleStrategy({
-      clientID: process.env.GOOGLECLIENTID,
-      clientSecret:process.env.GOOGLECLIENTSECRET,
-	  callbackURL:"api/auth/google/callback"
-    },
+passport.use("google",{ failureRedirect: `${process.env.FRONTEND_URL}`},new GoogleStrategy({
+  clientID: process.env.GOOGLECLIENTID,
+  clientSecret:process.env.GOOGLECLIENTSECRET,
+	callbackURL:"/api/auth/google/callback"
+  },
     async (accessToken,refreshToken,profile, cb) => {
       try {
         console.log(profile);

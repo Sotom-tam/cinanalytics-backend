@@ -10,7 +10,7 @@ router.get("/verify",verify)
 router.post("/send-otp",sendOtp)
 router.post("/verify-otp",verifyOtp)
 router.get("/google",googleAuth)
-router.get("google/callback",googleCallback)
+router.get("/google/callback",googleCallback)
 
 
 export default router
