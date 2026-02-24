@@ -120,10 +120,12 @@ export async function sendOtp(req, res, next) {
     req.session.pendingEmail = email;
     console.log("req session email",req.session.pendingEmail)
     await sendVerificationEmail(user.email);
+    req.session.save(()=>{
     return res.status(200).json({
         success: true,
         message: "OTP sent successfully",
       });
+    })
   } catch (err) {
     next(err);
   }
