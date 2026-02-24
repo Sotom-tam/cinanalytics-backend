@@ -117,15 +117,21 @@ export async function sendOtp(req, res, next) {
         message: "User not found",
       });
     }
-    req.session.pendingEmail = email;
-    console.log("req session email",req.session.pendingEmail)
-    await sendVerificationEmail(user.email);
-    req.session.save(()=>{
-    return res.status(200).json({
-        success: true,
-        message: "OTP sent successfully",
-      });
-    })
+    req.login(user,async(err)=>{
+      if(err){return next(err)}
+      req.session.pendingEmail = email;
+      req.session.otpPending = true;
+      console.log("req session email",req.session.pendingEmail)
+      await sendVerificationEmail(user.email);
+
+      req.session.save(() => {
+      return res.status(200).json({ success: true, message: "OTP sent" });
+    });
+      return res.status(200).json({
+          success: true,
+          message: "OTP sent successfully",
+        });
+      })
   } catch (err) {
     next(err);
   }
