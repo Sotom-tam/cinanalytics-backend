@@ -95,6 +95,7 @@ export async function verify(req,res,next){
           return res.status(400).json({message:"Token not found",success:false});
         }
         // if(new Date() > tokens.expires){
+        //   console.log("(error)")
         //   await deleteMagicToken(email)
         //   return res.status(404).json({message:"Token has Expired",success:false})
         // }

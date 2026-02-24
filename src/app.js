@@ -18,7 +18,7 @@ app.use(cors({
     credentials:true
 }))
 
-const isProd = process.env.NODE_ENV === "production";
+const isProd = process.env.PRODUCTION === "production";
 //console.log(isProd)
 const pgSession=connectSession(session)
 app.use(session({

@@ -19,6 +19,11 @@ export async function storeUserData(email,name,picture){
     }
     
 }
+
+export const deleteUser = async (email) => {
+  await pool.query(`DELETE FROM users WHERE email = $1`,[email]);
+};
+
 export async function getUserByEmail(email){
     const result =await pool.query(`SELECT * FROM users WHERE email=$1;`,[email])
     //console.log("get user:",result.rows)
