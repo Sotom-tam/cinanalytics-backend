@@ -6,15 +6,26 @@ import passport from "../config/passport.js"
 
 export async function getUserData(req,res){
   //user should be logged in and have a session
-  const userId=req.user
-  console.log(req.isAuthenticated(),req.user)
+  if(req.user){
+  const userId=req.user.id
   const user= await getUserById(userId)
   if(user){
     return res.status(200).json(user)
   }else{
     return res.status(404).json({message:"User not Found",success:false})
   }
+  }else{
+    const userId=req.query.id
+    console.log(userId)
+    const user= await getUserById(userId)
+    if(user){
+      console.log(user)
+    return res.status(200).json(user)
+  }else{
+    return res.status(404).json({message:"User not Found",success:false})
   }
+  }
+}
 
 export const googleAuth = passport.authenticate("google", {
   failureRedirect: `${process.env.FRONTEND_URL}`,
