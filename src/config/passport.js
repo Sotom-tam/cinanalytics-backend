@@ -32,11 +32,17 @@ passport.use("google",new GoogleStrategy({
       try {
         //console.log(profile);
         const email = profile.emails?.[0]?.value;
-        const user = await storeUserEmail(email)
-        console.log(email,user)
-        if (user) {
-          return cb(null, user);
-        } 
+        const isUser=await getUserByEmail(email)
+        if(isUser){
+          return cb(null, isUser);
+        }
+        else{
+          const user = await storeUserEmail(email)
+          console.log(email,user)
+          if (user) {
+            return cb(null, user);
+          } 
+        }
       } catch (err) {
         return cb(err);
       }
