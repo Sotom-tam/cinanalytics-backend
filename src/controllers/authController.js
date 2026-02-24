@@ -12,9 +12,12 @@ export const googleCallback = [
     failureRedirect: `${process.env.FRONTEND_URL}`,
     session: true
   }),
-    (req, res) => {
-    // passport already stored user in session via serializeUser
-    return res.redirect(`${process.env.FRONTEND_URL}/dashboard.html`);
+  (req, res, next) => {
+    // Ensure user is fully logged in before redirect
+    req.login(req.user, (err) => {
+      if (err) return next(err);
+      return res.redirect(`${process.env.FRONTEND_URL}/dashboard.html`);
+    });
   },
 ];
 export async function login(req,res,next){
