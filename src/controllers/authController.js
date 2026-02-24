@@ -130,14 +130,14 @@ export async function sendOtp(req, res, next) {
 export const verifyOtp = async (req, res, next) => {
   try {
     const { otp } = req.body;
+    const email =req.query.email
     if (!otp) {
       return res.status(400).json({
         success: false,
         message: "OTP is required",
       });
     }
-    //console.log(req.user)
-    const email=req.session.pendingEmail
+    
     console.log(email)
     const user = await getUserByEmail(email);
     // 4️⃣ Call service to verify
