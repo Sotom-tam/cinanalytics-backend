@@ -97,9 +97,9 @@ export async function checkOtp(email){
     }
 }
 export const getOtpByEmail = async (email) => {
-  const result =await pool.query(`SELECT otp_hash FROM otp_tokens WHERE email = $1`,[email]);
+  const result =await pool.query(`SELECT * FROM otp_tokens WHERE email = $1`,[email]);
   //console.log("result.rows",result.rows)
-  return result.rows;
+  return result.rows[0];
 };
 export const deleteOtp = async (email) => {
   await pool.query(`DELETE FROM otp_tokens WHERE email = $1`,[email]);

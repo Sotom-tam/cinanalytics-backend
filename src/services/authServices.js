@@ -60,10 +60,8 @@ export async function findTokenByEmail(email){
 }
 export async function sendVerificationEmail(email){
     const result=await getOtpByEmail(email)
-    console.log("result:",result.length)
-    if(result.length>1){
-      await deleteOtp(email)
-    }
+    //console.log("result:")
+    await deleteOtp(email)
     const otp= await genOtp();
     const otpHash=await bcrypt.hash(otp.toString(),10)
     const storedOtp=await storeOtp(email,otpHash)
@@ -93,6 +91,7 @@ export const verifyOtpService= async (email, otp) => {
   if (record.length<0) {
     throw new Error("OTP not found");
   }
+  //console.log(record,record.otp_hash)
   const isMatch= await bcrypt.compare(otp,record.otp_hash)
   console.log(isMatch)
   if (!isMatch) {
