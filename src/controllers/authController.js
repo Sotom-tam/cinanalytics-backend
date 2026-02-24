@@ -23,7 +23,6 @@ export async function login(req,res,next){
         return res.status(200).json({message:"User Authenticated Successfully",success:true})
     })     
 }
-
 export async function requestMagicLink(req, res) {
   console.log("controller,",req.body)
   try {
