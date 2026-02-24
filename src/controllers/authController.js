@@ -37,7 +37,7 @@ export async function requestMagicLink(req, res) {
     res.json({ message: "Magic link sent" });
     // send email in background
     console.log("📨 Attempting SMTP connection...");
-    sendMagicLink(email, token).catch(err =>
+    await sendMagicLink(email, token).catch(err =>
       console.error("Email failed:", err)
     );
     console.log("✅ Email sent");
