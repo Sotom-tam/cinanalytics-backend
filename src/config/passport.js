@@ -75,7 +75,7 @@ passport.use(
   )
 );
 passport.serializeUser((user, done) => {
-	console.log("User in Serialise:",user)
+	//console.log("User in Serialise:",user)
 	done(null, user.id);
 });
 

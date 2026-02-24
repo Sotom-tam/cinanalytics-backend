@@ -2,6 +2,7 @@ import bcrypt from "bcrypt"
 import crypto from "crypto"
 import { sendEmail } from "../utilis/sendmail.js"
 import {getUserByEmail,storeUserEmail,storeMagicToken,getTokenByUserId,storeOtp,getOtpByEmail,deleteOtp} from "../model/authModel.js"
+import { get } from "https"
 
 
 export async function sendUserEmail(email){
@@ -58,6 +59,11 @@ export async function findTokenByEmail(email){
     return magicTokens
 }
 export async function sendVerificationEmail(email){
+    const result=await getOtpByEmail(email)
+    //console.log("result:",result)
+    if(!(result.length>0)){
+      await deleteOtp(email)
+    }
     const otp= await genOtp();
     const otpHash=await bcrypt.hash(otp.toString(),10)
     const storedOtp=await storeOtp(email,otpHash)
@@ -81,10 +87,10 @@ export async function verficationEmail(email,otp){
 }
 
 export const verifyOtpService= async (email, otp) => {
-  console.log("verify service",email,otp)
+  //console.log("verify service",email,otp)
   const record = await getOtpByEmail(email);
 
-  if (!record) {
+  if (!record.rows) {
     throw new Error("OTP not found");
   }
   const isMatch= await bcrypt.compare(otp,record.otp_hash)

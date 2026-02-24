@@ -8,15 +8,20 @@ export async function storeUserEmail(email){
     return user
 }
 export async function storeUserData(email,name,picture){
-    //console.log("model",email)
-    const result =await pool.query('INSERT INTO users (email,name,picture_url) VALUES ($1,$2,$3) RETURNING *;',[email,name,picture])
-    //console.log(result)
-    const user=result.rows[0]
-    return user
+    try {
+        //console.log("model",email)
+        const result =await pool.query('INSERT INTO users (email,name,picture_url) VALUES ($1,$2,$3) RETURNING *;',[email,name,picture])
+        //console.log(result)
+        const user=result.rows[0]
+        return user
+    } catch (error) {
+        console.log({error:error,message:"sql error"})
+    }
+    
 }
 export async function getUserByEmail(email){
     const result =await pool.query(`SELECT * FROM users WHERE email=$1;`,[email])
-    console.log(result.rows)
+    //console.log("get user:",result.rows)
     if(result.rows.length>0){
         //console.log(result.rows[0])add .
         return result.rows[0]
@@ -68,6 +73,7 @@ export const deleteMagicToken = async (email) => {
 };
 
 export async function storeOtp(email,otpHash) {
+    
     console.log(email,otpHash)
     //const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
     try {
@@ -79,9 +85,21 @@ export async function storeOtp(email,otpHash) {
         console.log(error)
     }
 }
+export async function checkOtp(email){
+    try {
+        const result =await pool.query(`SELECT otp_hash FROM otp_tokens WHERE email = $1`,[email]);
+        if(result.rows.length>1){
+            deleteOtp(email)
+        }
+        return result.rows
+    } catch (error) {
+        console.log(error)
+    }
+}
 export const getOtpByEmail = async (email) => {
   const result =await pool.query(`SELECT otp_hash FROM otp_tokens WHERE email = $1`,[email]);
-  return result.rows[0];
+  //console.log("result.rows",result.rows)
+  return result.rows;
 };
 export const deleteOtp = async (email) => {
   await pool.query(`DELETE FROM otp_tokens WHERE email = $1`,[email]);
