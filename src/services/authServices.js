@@ -1,9 +1,8 @@
 import bcrypt from "bcrypt"
 import crypto from "crypto"
-import { Resend } from "resend"
+import { sendEmail } from "../utilis/sendmail.js"
 import {getUserByEmail,storeUserEmail,storeMagicToken,getTokenByUserId,storeOtp,getOtpByEmail,deleteOtp} from "../model/authModel.js"
-//console.log("ENV CHECK:", process.env.RESEND_API_KEY);
-const resend= new Resend(process.env.RESEND_API_KEY)
+
 
 export async function sendUserEmail(email){
     const userId=storeUserEmail()
@@ -15,8 +14,9 @@ export async function sendUserEmail(email){
 }
 export async function genMagicToken(email){
     const user=await storeUserEmail(email)
+    console.log(user)
     const token=crypto.randomBytes(32).toString("base64url")
-    //console.log(token)
+    console.log(token)
     //hashing token to add to the table
     const tokenHash= await bcrypt.hash(token,10)
     //store token
@@ -27,10 +27,9 @@ export async function genMagicToken(email){
 export async function sendMagicLink(email, token) {
     //console.log(email,token)
   try {
-    const magicLink = `http://localhost:4000/api/auth/verify?token=${token}&email=${email}`;
+    const magicLink = `https://cin-analytics.vercel.app/verify.html/verify?token=${token}&email=${email}`;
 
-    const response = await resend.emails.send({
-      from: "Cinalytics <onboarding@resend.dev>",
+    const response = await sendEmail({
       to: email,
       subject: "Your magic login link",
       html: `
@@ -73,12 +72,11 @@ export async function genOtp(){
     return otp
 }
 export async function verficationEmail(email,otp){
-    const response = await resend.emails.send({
-        from: "Cinalytics <onboarding@resend.dev>",
-        to: email,
-        subject: "Your verification code",
-        html: `<h2>Your OTP is ${otp}</h2>`
-    });
+  const response=  await sendEmail({
+    to: email,
+    subject: "Your OTP Code",
+    text: `<h2>Your OTP is ${otp}</h2>`,
+  });
     return response
 }
 

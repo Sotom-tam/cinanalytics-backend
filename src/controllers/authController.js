@@ -25,18 +25,20 @@ export async function login(req,res,next){
 }
 
 export async function requestMagicLink(req, res) {
+  console.log("controller,",req.body)
   try {
-    const { email } = req.body;
-
+    const email  = req.body.email;
+    console.log(email)
     // generate secure token
     const token =await genMagicToken(email);
+    console.log(token)
     // TODO: store hashed token in DB here
     // send email
     const response=await sendMagicLink(email, token);
     console.log(response)
     res.json({ message: "Magic link sent" });
   } catch (err) {
-    res.status(500).json({ error: "Failed to send magic link" });
+    res.status(500).json({ error: err.message });
   }
 }
 
