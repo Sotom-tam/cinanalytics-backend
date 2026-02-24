@@ -104,3 +104,10 @@ export const getOtpByEmail = async (email) => {
 export const deleteOtp = async (email) => {
   await pool.query(`DELETE FROM otp_tokens WHERE email = $1`,[email]);
 };
+
+export async function updateUser(email,name,picture){
+    const result = await pool.query(`UPDATE users SET name = $1,
+        picture_url = $2
+        WHERE email = $3 RETURNING *; `,[name,picture,email]
+    )
+}

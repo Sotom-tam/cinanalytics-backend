@@ -60,8 +60,8 @@ export async function findTokenByEmail(email){
 }
 export async function sendVerificationEmail(email){
     const result=await getOtpByEmail(email)
-    //console.log("result:",result)
-    if((result.length>1)){
+    console.log("result:",result.length)
+    if(result.length>1){
       await deleteOtp(email)
     }
     const otp= await genOtp();
