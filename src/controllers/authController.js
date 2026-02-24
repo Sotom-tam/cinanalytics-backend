@@ -8,10 +8,13 @@ export const googleAuth = passport.authenticate("google", {
   scope: ["profile", "email"],
 });
 export const googleCallback = [
-    passport.authenticate("google"),
+    passport.authenticate("google",{
+    failureRedirect: `${process.env.FRONTEND_URL}`,
+    session: true
+  }),
     (req, res) => {
     // passport already stored user in session via serializeUser
-    return res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
+    return res.redirect(`${process.env.FRONTEND_URL}/dashboard.html`);
   },
 ];
 export async function login(req,res,next){

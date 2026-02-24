@@ -30,8 +30,10 @@ passport.use("google",new GoogleStrategy({
   },
     async (accessToken,refreshToken,profile, cb) => {
       try {
-        console.log(profile);
-        const user = storeUserEmail(profile.email)
+        //console.log(profile);
+        const email = profile.emails?.[0]?.value;
+        const user = await storeUserEmail(email)
+        console.log(email,user)
         if (user) {
           return cb(null, user);
         } 
