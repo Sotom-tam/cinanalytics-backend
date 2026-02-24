@@ -7,7 +7,7 @@ export async function sendEmail({ to, subject, html, text }) {
     from: 'Cinalytics <onboarding@resend.dev>',
     to,
     subject,
-    html: html || <p>${text}</p>,
+    html: html || `<p>${text}</p>`,
   });
 
   if (error) {
