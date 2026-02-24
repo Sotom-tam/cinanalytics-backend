@@ -58,6 +58,7 @@ export async function verify(req,res,next){
         if (!token) {
         return res.status(400).send("Invalid link");
         }
+        const user=await getUserByEmail(email)
         const storedToken = await findTokenByEmail(email);
         console.log("stored Token",storedToken)
         if (!storedToken) {
