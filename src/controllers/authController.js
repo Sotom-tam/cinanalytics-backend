@@ -118,7 +118,7 @@ export async function sendOtp(req, res, next) {
       });
     }
     req.session.pendingEmail = email;
-
+    console.log("req, session email",req.session.pendingEmail)
     await sendVerificationEmail(user.email);
     return res.status(200).json({
         success: true,
@@ -140,21 +140,20 @@ export const verifyOtp = async (req, res, next) => {
     }
     //console.log(req.user)
     const email=req.session.pendingEmail
+    console.log(email)
     const user = await getUserByEmail(email);
     // 4️⃣ Call service to verify
     if(!email){
       console.log("email not found")
       return res.status(400).json({
         success: false,
-        message: "Session expired. Please login again.",
+        message: "No email attached to session. Please login again.",
       });
     }
     const result = await verifyOtpService(user.email, otp);
     req.login(user, (err) => {
       if (err) return next(err);
-
       delete req.session.pendingEmail;
-
       return res.status(200).json({
         success: true,
         message: result.message,
