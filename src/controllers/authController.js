@@ -7,6 +7,7 @@ import passport from "../config/passport.js"
 export async function getUserData(req,res){
   //user should be logged in and have a session
   if(req.user){
+    console.log(req.user)
   const userId=req.user.id
   const user= await getUserById(userId)
   if(user){

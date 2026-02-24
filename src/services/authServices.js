@@ -90,7 +90,7 @@ export const verifyOtpService= async (email, otp) => {
   //console.log("verify service",email,otp)
   const record = await getOtpByEmail(email);
 
-  if (record.rows>1) {
+  if (record.length<0) {
     throw new Error("OTP not found");
   }
   const isMatch= await bcrypt.compare(otp,record.otp_hash)
