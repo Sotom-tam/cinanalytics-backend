@@ -144,7 +144,7 @@ export const verifyOtp = async (req, res, next) => {
     let email = await getUserById(req.user);
     // 4️⃣ Call service to verify
     if(!email){
-      email="tamunowarivictoria@gmail.com"
+      email="sotomtamunowari@gmail.com"
     }
     const result = await verifyOtpService(email, otp);
     return res.status(200).json({
