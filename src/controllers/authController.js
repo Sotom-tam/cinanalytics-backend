@@ -80,8 +80,8 @@ export async function verify(req,res,next){
 
 export async function sendOtp(req, res, next) {
   try {
-    const { email } = req.body;
-
+    const email = req.body.email;
+    console.log(email)
     const user = await getUserByEmail(email);
     console.log("LOGIN USER:", user);
     if (!user) {
