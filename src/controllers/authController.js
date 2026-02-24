@@ -34,10 +34,11 @@ export async function requestMagicLink(req, res) {
     //console.log(token)
     // TODO: store hashed token in DB here
     // send email
-    console.log("sendingmagicLink")
-    const response=await sendMagicLink(email, token);
-    console.log(response)
     res.json({ message: "Magic link sent" });
+    // send email in background
+    sendMagicLink(email, token).catch(err =>
+      console.error("Email failed:", err)
+    );
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
