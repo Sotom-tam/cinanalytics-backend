@@ -72,8 +72,10 @@ export async function verify(req,res,next){
                 return res.status(200).json({message:"User Authenticated Successfully",success:true})
             })  
         }
-        //if isValid false
-        return res.status(401).json({message:"Invalid token",success:false})        
+        if(!isValid){
+           return res.status(401).json({message:"Invalid token",success:false})  
+        }
+             
     } catch (error) {
         res.status(500).send("Verification failed");
     }
