@@ -81,7 +81,7 @@ export async function verficationEmail(email,otp){
 }
 
 export const verifyOtpService= async (email, otp) => {
-  console.log(email)
+  console.log("verify service",email,otp)
   const record = await getOtpByEmail(email);
 
   if (!record) {

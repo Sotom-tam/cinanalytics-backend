@@ -75,6 +75,7 @@ export async function verify(req,res,next){
         return res.status(400).send("Invalid link");
         }
         const user=await getUserByEmail(email)
+        console.log(user)
         const tokens = await findTokenByEmail(email);
         console.log("stored Token",storedToken)
         if (!tokens) {
@@ -129,15 +130,13 @@ export async function sendOtp(req, res, next) {
 
 export const verifyOtp = async (req, res, next) => {
   try {
-    const { otp } = req.body;
-    const email =req.query.email
+    const { otp ,email} = req.body;
     if (!otp) {
       return res.status(400).json({
         success: false,
         message: "OTP is required",
       });
-    }
-    
+    }    
     console.log(email)
     const user = await getUserByEmail(email);
     // 4️⃣ Call service to verify
@@ -148,7 +147,7 @@ export const verifyOtp = async (req, res, next) => {
         message: "No email attached to session. Please login again.",
       });
     }
-    const result = await verifyOtpService(user.email, otp);
+    const result = await verifyOtpService(email, otp);
     req.login(user, (err) => {
       if (err) return next(err);
       delete req.session.pendingEmail;
