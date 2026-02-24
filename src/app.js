@@ -22,6 +22,7 @@ const isProd = process.env.PRODUCTION === "production";
 //console.log(isProd)
 const pgSession=connectSession(session)
 app.use(session({
+    name: "connect.sid",
     store:new pgSession({
         pool:pool,
         tableName:"sessions"
