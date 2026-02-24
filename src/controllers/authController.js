@@ -89,16 +89,17 @@ export async function verify(req,res,next){
         const user=await getUserByEmail(email)
         console.log(user)
         const tokens = await findTokenByEmail(email);
-        console.log("stored Token",storedToken)
+        console.log("stored Token",tokens.token_hash)
         if (!tokens) {
-            return res.status(400).json({message:"Token not found",success:false});
+          console.log("yoo")
+          return res.status(400).json({message:"Token not found",success:false});
         }
-        if(new Date() > tokens.expires){
-          await deleteMagicToken(email)
-          return res.status(404).json({message:"Token has Expired",success:false})
-        }
+        // if(new Date() > tokens.expires){
+        //   await deleteMagicToken(email)
+        //   return res.status(404).json({message:"Token has Expired",success:false})
+        // }
         const isValid= await bcrypt.compare(token,tokens.token_hash);
-        console.log(isValid)
+        console.log("isValid:",isValid)
         if(isValid){
             req.login(user,(err)=>{
                 if(err){return next(err)}

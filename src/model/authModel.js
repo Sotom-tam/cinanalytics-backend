@@ -54,8 +54,9 @@ export async function storeMagicToken(user_id,token){
 export async function getTokenByUserId(userId){
     try {
         const result = await pool.query(`SELECT * FROM magic_tokens WHERE user_id=$1`,[userId])
-        //console.log("token ",result.rows[0])
+        console.log("token ",result.rows[0],result.rows.length)
         if(result.rows.length>0){
+            console.log("sending")
             return result.rows[0]
         }
     } catch (error) {
