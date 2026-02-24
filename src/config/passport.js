@@ -59,6 +59,7 @@ passport.use(
         }
 
         // attach user to session
+        console.log(user)
         return done(null, user);
 
       } catch (err) {
@@ -68,7 +69,7 @@ passport.use(
   )
 );
 passport.serializeUser((user, done) => {
-	//console.log("User in Serialise:",user)
+	console.log("User in Serialise:",user)
 	done(null, user.id);
 });
 
