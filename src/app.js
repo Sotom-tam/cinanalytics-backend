@@ -17,6 +17,8 @@ app.use(cors({
     origin:["https://cin-analytics.vercel.app","https://cin-analytics.vercel.app/verify","http://127.0.0.1:3001","http://127.0.0.1:5500","http://127.0.0.1:3000","http://localhost:5173"],
     credentials:true
 }))
+
+const isProd = process.env.NODE_ENV === "production";
 const pgSession=connectSession(session)
 app.use(session({
     store:new pgSession({
@@ -27,9 +29,9 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie:{maxAge:1000*60*60,
-        sameSite:"none",
+        sameSite:isProd?"none":"lax",
         httpOnly:true,
-        secure:true,
+        secure:isProd,
     }
 }))
 
