@@ -69,6 +69,10 @@ export async function requestMagicLink(req, res) {
   try {
     const email  = req.body.email;
     console.log(email)
+    const isUser=await getUserByEmail(email)
+    if(isUser){
+      return res.json({message:"Your Account already exists, Please login",success:false})
+    }
     // generate secure token
     const token =await genMagicToken(email);
     //console.log(token)

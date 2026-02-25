@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt"
 import crypto from "crypto"
 import { sendEmail } from "../utilis/sendmail.js"
-import {getUserByEmail,storeUserEmail,storeMagicToken,getTokenByUserId,storeOtp,getOtpByEmail,deleteOtp,deleteUser} from "../model/authModel.js"
+import {getUserByEmail,deleteMagicToken,storeUserEmail,storeMagicToken,getTokenByUserId,storeOtp,getOtpByEmail,deleteOtp,deleteUser} from "../model/authModel.js"
 import { get } from "https"
 
 
@@ -14,6 +14,7 @@ export async function sendUserEmail(email){
 
 }
 export async function genMagicToken(email){
+  await deleteMagicToken(email)
   await deleteUser(email)
     const user=await storeUserEmail(email)
     console.log(user)
@@ -33,7 +34,7 @@ export async function sendMagicLink(email, token) {
 
     const response = await sendEmail({
       to: email,
-      subject: "Your magic login link",
+      subject: "Your Account Verification link",
       html: `
         <h2>Verify your account</h2>
         <p>Click the button below to verify your account:</p>
