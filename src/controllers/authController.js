@@ -71,7 +71,7 @@ export async function requestMagicLink(req, res) {
     console.log(email)
     const isUser=await getUserByEmail(email)
     if(isUser){
-      return res.json({message:"Your Account already exists, Please login",success:false})
+      return res.status(400).json({message:"Your Account already exists, Please login",success:false})
     }else{
       // generate secure token
     const token =await genMagicToken(email);
@@ -80,7 +80,7 @@ export async function requestMagicLink(req, res) {
     // send email
     res.json({ message: "Magic link sent" });
     // send email in background
-    console.log("📨 Attempting SMTP connection...");
+    //console.log("📨 Attempting SMTP connection...");
     await sendMagicLink(email, token).catch(err =>
       console.error("Email failed:", err)
     );
