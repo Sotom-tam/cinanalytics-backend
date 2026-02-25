@@ -46,6 +46,7 @@ passport.use("google",new GoogleStrategy({
           return cb(null, user);
         }
       } catch (err) {
+        console.error("Google strategy error:", err)
         return cb(err);
       }
 }))
