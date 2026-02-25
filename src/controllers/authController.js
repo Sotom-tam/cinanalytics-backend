@@ -115,6 +115,7 @@ export async function verify(req,res,next){
         const isValid= await bcrypt.compare(token,tokens.token_hash);
         console.log("isValid:",isValid)
         if(isValid){
+          await pool.query(`UPDATE users SET verified = true WHERE email = $1`, [email]);
             req.login(user,(err)=>{
                 if(err){return next(err)}
                 return res.status(200).json({message:"User Authenticated Successfully",success:true})
