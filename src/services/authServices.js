@@ -19,7 +19,7 @@ export async function genMagicToken(email){
   if (!user) {
     user = await storeUserEmail(email);
   }
-  await deleteUser(email)
+  //await deleteUser(email)
     console.log(user)
     const token=crypto.randomBytes(32).toString("base64url")
     console.log(token)
