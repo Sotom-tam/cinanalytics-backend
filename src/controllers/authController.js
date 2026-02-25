@@ -28,10 +28,18 @@ export async function getUserData(req,res){
   }
 }
 
-export const googleAuth = passport.authenticate("google", {
-  failureRedirect: `${process.env.FRONTEND_URL}`,
-  scope: ["profile", "email"],
-});
+export async function googleAuth(req,res,next){
+  req.logout((err) => {
+    if (err) return next(err);
+    req.session.destroy(() => {
+      passport.authenticate("google", {
+        scope: ["profile", "email"],
+        failureRedirect: `${process.env.FRONTEND_URL}`,
+      })(req, res, next);
+    });
+  });
+}
+
 export const googleCallback = [
     passport.authenticate("google",{
     failureRedirect: `${process.env.FRONTEND_URL}`,

@@ -86,9 +86,9 @@ passport.serializeUser((user, done) => {
 passport.deserializeUser(async (id, done) => {
 	try {
 		// fetch user from db again
-    console.log(id)
+    console.log("user id",id)
 		const result = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
-    console.log(result.rows[0])
+    console.log("user to serialise:",result.rows[0])
 		done(null, result.rows[0]);
 	} catch (err) {
 		done(err);
