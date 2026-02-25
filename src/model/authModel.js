@@ -8,15 +8,11 @@ export async function storeUserEmail(email){
     return user
 }
 export async function storeUserData(email,name,picture){
-    try {
-        //console.log("model",email)
-        const result =await pool.query('INSERT INTO users (email,name,picture_url) VALUES ($1,$2,$3) RETURNING *;',[email,name,picture])
-        //console.log(result)
-        const user=result.rows[0]
-        return user
-    } catch (error) {
-        console.log({error:error,message:"sql error"})
-    }
+    const result = await pool.query(
+    'INSERT INTO users (email,name,picture_url) VALUES ($1,$2,$3) RETURNING *;',
+    [email, name, picture]
+    )
+    return result.rows[0]
     
 }
 
