@@ -36,10 +36,10 @@ export async function sendMagicLink(email, token) {
       subject: "Your magic login link",
       html: `
         <h2>Verify your account</h2>
-        <p>Click the button below to sign in:</p>
+        <p>Click the button below to verify your account:</p>
         <a href="${magicLink}" 
            style="padding:10px 20px;background:#000;color:#fff;text-decoration:none;border-radius:6px;">
-           Sign in
+           Verify
         </a>
         <p>This link expires in 15 minutes.</p>
       `,
