@@ -23,7 +23,7 @@ export async function getUserData(req,res){
       console.log(user)
     return res.status(200).json(user)
   }else{
-    return res.status(404).json({message:"User not Found",success:false})
+    return res.status(401).json({message:"User not Found",success:false})
   }
   }
 }
@@ -36,14 +36,7 @@ export const googleCallback = [
     passport.authenticate("google",{
     failureRedirect: `${process.env.FRONTEND_URL}`,
     session: true
-  }),
-  (req, res, next) => {
-    // Ensure user is fully logged in before redirect
-    req.login(req.user, (err) => {
-      if (err) return next(err);
-      return res.redirect(`${process.env.FRONTEND_URL}/dashboard.html`);
-    });
-  },
+  })
 ];
 export async function login(req,res,next){
     const email=req.body.email

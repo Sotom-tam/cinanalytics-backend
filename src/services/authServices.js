@@ -35,7 +35,7 @@ export async function sendMagicLink(email, token) {
       to: email,
       subject: "Your magic login link",
       html: `
-        <h2>Login to your account</h2>
+        <h2>Verify your account</h2>
         <p>Click the button below to sign in:</p>
         <a href="${magicLink}" 
            style="padding:10px 20px;background:#000;color:#fff;text-decoration:none;border-radius:6px;">
