@@ -9,14 +9,14 @@ import { get } from "https"
 
 
 export async function genMagicToken(email){
-  let user = await getUserByEmail(email);
-  if (!user) {
-    user = await storeUserEmail(email);
-  }
+    let user = await getUserByEmail(email);
+    if (!user) {
+      user = await storeUserEmail(email);
+    }
   //await deleteUser(email)
-    console.log(user)
+    //console.log(user)
     const token=crypto.randomBytes(32).toString("base64url")
-    console.log(token)
+    //console.log(token)
     //hashing token to add to the table
     const tokenHash= await bcrypt.hash(token,10)
     //store token
@@ -25,7 +25,7 @@ export async function genMagicToken(email){
 }
 
 export async function sendMagicLink(email, token) {
-  console.log(email,token)
+  //console.log(email,token)
   try {
     const magicLink = `https://cin-analytics.vercel.app/verify.html?token=${token}&email=${email}`;
 

@@ -5,10 +5,13 @@ import express from "express"
 import cors from "cors"
 import passport from "passport"
 import session from "express-session"
-import authRoutes from "./routes/authRoutes.js"
-import eventRoutes from "./routes/eventRoutes.js"
 import connectSession from "connect-pg-simple"
 import pool from "./db.js"
+import authRoutes from "./routes/authRoutes.js"
+import eventRoutes from "./routes/eventRoutes.js"
+import productRoutes from "./routes/projectRoutes.js"
+
+
 const app=express()
 app.set("trust proxy", 1);
 
@@ -43,7 +46,7 @@ app.use(passport.session())
 
 app.use("/api/auth",authRoutes)
 app.use("/api/events",eventRoutes)
-
+app.use("/api/project",productRoutes)
 
 const port=process.env.PORT || 4000;
 

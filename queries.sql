@@ -110,5 +110,12 @@ CREATE TABLE magic_tokens(
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE projects (
+  id SERIAL PRIMARY KEY,
+  project_url TEXT,
+  project_key TEXT UNIQUE,
+  verified BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPZ DEFAULT NOW()
+);
 
 

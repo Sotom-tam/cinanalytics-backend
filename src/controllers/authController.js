@@ -3,6 +3,18 @@ import {genMagicToken,sendMagicLink,findTokenByEmail,sendVerificationEmail,verif
 import {getUserByEmail,getUserById,deleteMagicToken} from "../model/authModel.js"
 import passport from "../config/passport.js"
 
+export async function checkUser(req, res) {
+  if (!req.user) {
+    // destroy stale session if it exists
+    if (req.session) {
+      req.session.destroy(() => {
+        res.clearCookie("connect.sid");
+      });
+    }
+    return res.status(401).json({ success: false, message: "Not authenticated" });
+  }
+  return res.status(200).json({ success: true, user: req.user });
+}
 
 export async function getUserData(req,res){
   //user should be logged in and have a session
@@ -85,7 +97,7 @@ export async function requestMagicLink(req, res) {
     await sendMagicLink(email, token).catch(err =>
       console.error("Email failed:", err)
     );
-    console.log("✅ Email sent");
+    //console.log("✅ Email sent");
     }
   } catch (err) {
     res.status(500).json({ error: err.message });
