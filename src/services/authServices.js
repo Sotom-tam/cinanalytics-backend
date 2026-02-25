@@ -6,14 +6,8 @@ import {getUserByEmail,deleteMagicToken,storeUserEmail,storeMagicToken,getTokenB
 import { get } from "https"
 
 
-export async function sendUserEmail(email){
-    const userId=await storeUserEmail()
-    if(userId){
-        return userId
-    }
-    //hashing token to add to the table
 
-}
+
 export async function genMagicToken(email){
   let user = await getUserByEmail(email);
   if (!user) {

@@ -79,7 +79,7 @@ export async function requestMagicLink(req, res) {
     //console.log(token)
     // TODO: store hashed token in DB here
     // send email
-    res.json({ message: "Magic link sent" });
+    res.status(200).json({ message: "Magic link sent" });
     // send email in background
     //console.log("📨 Attempting SMTP connection...");
     await sendMagicLink(email, token).catch(err =>
