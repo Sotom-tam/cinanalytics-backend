@@ -70,7 +70,8 @@ export async function requestMagicLink(req, res) {
     const email  = req.body.email;
     console.log(email)
     const isUser=await getUserByEmail(email)
-    if(isUser){
+    console.log(isUser)
+    if(isUser.email&&isUser.verified===true){
       return res.status(400).json({message:"Your Account already exists, Please login",success:false})
     }else{
       // generate secure token
