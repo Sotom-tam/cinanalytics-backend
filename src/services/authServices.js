@@ -1,4 +1,5 @@
 import bcrypt from "bcrypt"
+import pool from "../db.js"
 import crypto from "crypto"
 import { sendEmail } from "../utilis/sendmail.js"
 import {getUserByEmail,deleteMagicToken,storeUserEmail,storeMagicToken,getTokenByUserId,storeOtp,getOtpByEmail,deleteOtp,deleteUser} from "../model/authModel.js"
@@ -14,9 +15,11 @@ export async function sendUserEmail(email){
 
 }
 export async function genMagicToken(email){
-  await deleteMagicToken(email)
-  await deleteUser(email)
-    const user=await storeUserEmail(email)
+  let user = await getUserByEmail(email);
+  if (!user) {
+    user = await storeUserEmail(email);
+  }
+  //await deleteUser(email)
     console.log(user)
     const token=crypto.randomBytes(32).toString("base64url")
     console.log(token)
