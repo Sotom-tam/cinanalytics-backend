@@ -3,7 +3,9 @@ import pool from "../db.js"
 
 //function to store the project details
 export async function addNewProject(projectUrl,projectKey){
-    const result = await pool.query('INSERT INTO projects (name,project_key) VALUES ($1) RETURNING *;',[projectUrl,projectKey])
+    //console.log(projectUrl,projectKey)
+    const result = await pool.query('INSERT INTO projects (project_url,project_key) VALUES ($1,$2) RETURNING *;',[projectUrl,projectKey])
+    console.log(result.rows[0])
     return result.rows[0]
 }
 
@@ -12,8 +14,8 @@ export async function getProjectByKey(projectKey) {
     return result.rows[0]
 }
 
-export async function updateProjectsWithName(projectName) {
-    const result = await pool.query('UPDATE projects SET project_name=$1 RETURNING *;',[projectName])
+export async function updateProjects(projectName,projectKey) {
+    const result = await pool.query('UPDATE projects SET project_name=$1, verified=true WHERE project_key=$2 RETURNING *;',[projectName,projectKey])
     return result.rows[0]
 }
 
