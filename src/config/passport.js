@@ -42,10 +42,8 @@ passport.use("google",new GoogleStrategy({
         else{
           const user = await storeUserData(email,name,picture)
           console.log("NEW USER RETURNED:", user)
-          console.log(email,user)
-          if (user) {
-            return cb(null, user);
-          } 
+          if (!user) return cb(new Error("Failed to create user")); // ← explicit error
+          return cb(null, user);
         }
       } catch (err) {
         return cb(err);
