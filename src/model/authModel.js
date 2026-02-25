@@ -9,7 +9,7 @@ export async function storeUserEmail(email){
 }
 export async function storeUserData(email,name,picture){
     const result = await pool.query(
-    'INSERT INTO users (email,name,picture_url) VALUES ($1,$2,$3) RETURNING *;',
+    'INSERT INTO users (email,name,picture_url,verified) VALUES ($1,$2,$3,true) RETURNING *;',
     [email, name, picture]
     )
     return result.rows[0]
@@ -111,7 +111,8 @@ export const deleteOtp = async (email) => {
 
 export async function updateUser(email,name,picture){
     const result = await pool.query(`UPDATE users SET name = $1,
-        picture_url = $2
+        picture_url = $2,
+        verified=true
         WHERE email = $3 RETURNING *; `,[name,picture,email]
     )
     return result.rows[0]
