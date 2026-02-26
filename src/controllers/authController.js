@@ -151,7 +151,7 @@ export async function sendOtp(req, res, next) {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found",
+        message: "This email is not registered on Cinalytics",
       });
     }
     req.login(user,async(err)=>{
