@@ -13,10 +13,20 @@ export async function addNewProjectControl(req,res){
 }
 
 export async function verifyProjectControl(req,res){
-    console.log(req.body)
+    const {projectKey,projectName}=req.body
     try {
-        const result=await verifyProjectServices(req.body.projectName,req.body.projectKey)
-        res.redirect(`http://localhost:4000/api/project/verify?projectKey=${result.project_key}`)
+        //if thesame app tries to send initialse again we need to block it
+        const project=await getProjectByKey(projectKey)
+        //one thing to check for is if the project key does not exist
+        if(!project){
+            return res.status(400).json({message:"Invalid Project Key",success:false})
+        }
+        if(project.verified){
+            return res.json({message:"You are Verified"})
+        }else{//if project with that key has not been verified before
+            const result=await verifyProjectServices(req.body.projectName,req.body.projectKey)
+            return res.status(200).json({message:"Project Verified",projectName:projectName,projectKey:projectKey,success:true})
+        }
     } catch (error) {
         console.log(error)
         res.status(500).json({erorr:error})

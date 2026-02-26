@@ -221,13 +221,13 @@ export const verifyOtpService= async (email, otp) => {
   const isMatch= await bcrypt.compare(otp,record.otp_hash)
   console.log(isMatch)
   if (!isMatch) {
-    throw new Error("Invalid OTP");
+    return {success:false,message:"Invalid OTP. Please check the code and try again."};
   }
   if (new Date() > record.expires) {
     await deleteOtp(email); // remove expired OTP
-    throw new Error("OTP expired");
+    return {success:false,message:"Your verification code has expired. Request a new code to continue"};
   }
   // OTP is valid → remove it
   await deleteOtp(email);
-  return { message: "OTP verified successfully",success:true };
+  return {success:true};
 };

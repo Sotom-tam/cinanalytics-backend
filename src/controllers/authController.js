@@ -25,7 +25,7 @@ export async function getUserData(req,res){
   if(user){
     return res.status(200).json(user)
   }else{
-    return res.status(401).json({message:"User not Found",success:false})
+    return res.status(401).json({header:"Wrong Email",message:"This email is not registered on Cinalytics",success:false})
   }
   }else{
     const userId=req.query.id
@@ -172,32 +172,19 @@ export async function sendOtp(req, res, next) {
 export const verifyOtp = async (req, res, next) => {
   try {
     const { otp ,email} = req.body;
-    if (!otp) {
-      return res.status(400).json({
-        success: false,
-        message: "OTP is required",
-      });
-    }    
-    console.log(email)
+    console.log(email,otp)   
     const user = await getUserByEmail(email);
-    // 4️⃣ Call service to verify
-    if(!email){
-      console.log("email not found")
-      return res.status(400).json({
-        success: false,
-        message: "No email attached to session. Please login again.",
-      });
-    }
+    // Calling service to verify otp
     const result = await verifyOtpService(email, otp);
-    req.login(user, (err) => {
+    if(result.success){
+      req.login(user, (err) => {
       if (err) return next(err);
       delete req.session.pendingEmail;
-      return res.status(200).json({
-        success: true,
-        message: result.message,
-      });
+      return res.status(200).json({message: "Otp Verified Successfully",success: true,});
     });
-
+    }else{
+      return res.status(400).json({message:result.message,success:false})
+    }
   } catch (error) {
     return res.status(400).json({
       success: false,
