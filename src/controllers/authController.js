@@ -1,5 +1,4 @@
 import bcrypt from "bcrypt"
-import pool from "../db.js"
 import {genMagicToken,sendMagicLink,findTokenByEmail,sendVerificationEmail,verifyOtpService}from "../services/authServices.js"
 import {getUserByEmail,getUserById,deleteMagicToken,updateVerified} from "../model/authModel.js"
 import passport from "../config/passport.js"
@@ -87,7 +86,7 @@ export async function requestMagicLink(req, res) {
     const isUser=await getUserByEmail(email)
     console.log(isUser)
     if(isUser.email&&isUser.verified===true){
-      return res.status(400).json({header:"You Already Have an Account",message:"Your Account already exists, Please login",success:false})
+      return res.status(400).json({header:"You already have an account",message:"Your Account already exists, Please login",success:false})
     }else{
       // generate secure token
     const token =await genMagicToken(email);
