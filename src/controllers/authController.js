@@ -1,9 +1,11 @@
 import bcrypt from "bcrypt"
 import pool from "../db.js"
 import {genMagicToken,sendMagicLink,findTokenByEmail,sendVerificationEmail,verifyOtpService}from "../services/authServices.js"
-import {getUserByEmail,getUserById,deleteMagicToken} from "../model/authModel.js"
+import {getUserByEmail,getUserById,deleteMagicToken,updateVerified} from "../model/authModel.js"
 import passport from "../config/passport.js"
 
+
+//to check if user is logged in
 export async function checkUser(req, res) {
   if (!req.user) {
     // destroy stale session if it exists
@@ -121,12 +123,11 @@ export async function verify(req,res,next){
           return res.status(400).json({header:"Wrong Token",message:"Token not found",success:false});
         }
         const isValid= await bcrypt.compare(token,tokens.token_hash);
-        console.log("isValid:",isValid)
+        //console.log("isValid:",isValid)
         if(isValid){
-          console.log("in is valid",isValid)
-          const result=await pool.query(`UPDATE users SET verified = true WHERE email = $1 RETURNING *`, [email]);
-          const user=result.rows[0]  
-          console.log(user)
+         // console.log("in is valid",isValid)
+          const user=await updateVerified(email);
+          //console.log(user)
           req.login(user,(err)=>{
                 if(err){return next(err)}
                 return res.status(200).json({message:"User Authenticated Successfully",success:true})

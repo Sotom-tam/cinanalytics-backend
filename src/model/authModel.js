@@ -117,3 +117,8 @@ export async function updateUser(email,name,picture){
     )
     return result.rows[0]
 }
+
+export async function updateVerified(email){
+    const result=await pool.query(`UPDATE users SET verified = true WHERE email = $1 RETURNING *`, [email]);
+    return result.rows[0]
+}
