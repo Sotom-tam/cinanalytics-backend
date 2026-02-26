@@ -19,7 +19,7 @@ export async function verifyProjectControl(req,res){
         const project=await getProjectByKey(projectKey)
         //one thing to check for is if the project key does not exist
         if(!project){
-            return res.status(400).json({message:"Invalid Project Key",success:false})
+            return res.status(400).json({header:"Invalid Project Key",message:"This project key is invalid",success:false})
         }
         if(project.verified){
             return res.json({message:"You are Verified"})

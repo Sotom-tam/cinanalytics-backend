@@ -183,7 +183,7 @@ export const verifyOtp = async (req, res, next) => {
       return res.status(200).json({message: "Otp Verified Successfully",success: true,});
     });
     }else{
-      return res.status(400).json({header:"Wrong Otp Verification Code",message:result.message,success:false})
+      return res.status(400).json({header:"Wrong Otp Code",message:result.message,success:false})
     }
   } catch (error) {
     return res.status(400).json({
