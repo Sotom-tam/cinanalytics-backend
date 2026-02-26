@@ -1,4 +1,5 @@
 import bcrypt from "bcrypt"
+import pool from "../db.js"
 import {genMagicToken,sendMagicLink,findTokenByEmail,sendVerificationEmail,verifyOtpService}from "../services/authServices.js"
 import {getUserByEmail,getUserById,deleteMagicToken} from "../model/authModel.js"
 import passport from "../config/passport.js"
@@ -119,25 +120,23 @@ export async function verify(req,res,next){
         if (!tokens) {
           return res.status(400).json({header:"Wrong Token",message:"Token not found",success:false});
         }
-        // if(new Date() > tokens.expires){
-        //   console.log("(error)")
-        //   await deleteMagicToken(email)
-        //   return res.status(404).json({message:"Token has Expired",success:false})
-        // }
         const isValid= await bcrypt.compare(token,tokens.token_hash);
         console.log("isValid:",isValid)
         if(isValid){
-          await pool.query(`UPDATE users SET verified = true WHERE email = $1`, [email]);
-            req.login(user,(err)=>{
+          console.log("in is valid",isValid)
+          const result=await pool.query(`UPDATE users SET verified = true WHERE email = $1 RETURNING *`, [email]);
+          const user=result.rows[0]  
+          console.log(user)
+          req.login(user,(err)=>{
                 if(err){return next(err)}
                 return res.status(200).json({message:"User Authenticated Successfully",success:true})
             })  
-        }
-        if(!isValid){
+        }else{
            return res.status(401).json({message:"Invalid token",success:false})  
         }  
     } catch (error) {
-        res.status(500).send("Verification failed");
+      console.log(error)
+      res.status(500).json({message:"Verification failed"});
     }
 }
 
