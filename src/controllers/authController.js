@@ -35,7 +35,7 @@ export async function getUserData(req,res){
       console.log(user)
     return res.status(200).json(user)
   }else{
-    return res.status(401).json({message:"User not Found",success:false})
+    return res.status(401).json({message:"This email is not registered on Cinalytics",success:false})
   }
   }
 }
@@ -69,7 +69,7 @@ export async function login(req,res,next){
     const email=req.body.email
     const user=await getUserByEmail(email)
     if(!user){
-        return res.status(401).json({message:"User not Found",success:false})
+        return res.status(401).json({header:"Wrong Email",message:"This email is not registered on Cinalytics",success:false})
     }
     req.login(user,(err)=>{
         if(err){return next(err)}
@@ -84,14 +84,14 @@ export async function requestMagicLink(req, res) {
     const isUser=await getUserByEmail(email)
     console.log(isUser)
     if(isUser.email&&isUser.verified===true){
-      return res.status(400).json({message:"Your Account already exists, Please login",success:false})
+      return res.status(400).json({header:"You Already Have an Account",message:"Your Account already exists, Please login",success:false})
     }else{
       // generate secure token
     const token =await genMagicToken(email);
     //console.log(token)
     // TODO: store hashed token in DB here
     // send email
-    res.status(200).json({ message: "Magic link sent" });
+    res.status(200).json({ message: "Magic link sent. Please check your email" });
     // send email in background
     //console.log("📨 Attempting SMTP connection...");
     await sendMagicLink(email, token).catch(err =>
@@ -117,8 +117,7 @@ export async function verify(req,res,next){
         const tokens = await findTokenByEmail(email);
         console.log("stored Token",tokens.token_hash)
         if (!tokens) {
-          console.log("yoo")
-          return res.status(400).json({message:"Token not found",success:false});
+          return res.status(400).json({header:"Wrong Token",message:"Token not found",success:false});
         }
         // if(new Date() > tokens.expires){
         //   console.log("(error)")
