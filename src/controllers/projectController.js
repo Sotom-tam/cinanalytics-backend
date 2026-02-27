@@ -1,9 +1,20 @@
 import {addNewProjectServices,verifyProjectServices} from "../services/projectServices.js"
-import {getProjectByKey,getProjectByUrl} from "../model/projectModel.js"
+import {getAllProjects,getProjectByKey,getProjectByUrl} from "../model/projectModel.js"
 
 //This route gets all projects stored in the project table
-export async function getAllProjects(){
+export async function getAllProjectsController(){
+    try {
+        const projects=await getAllProjects()
+        if(!projects){
+            return res.status(500).json({message:"Something went wrong",success:false})
+        }else{
+            return res.status(200).json({header:"Successful",projects:projects,success:true})
+        }
 
+    } catch (error) {
+        console.log("Error:",error)
+        res.status(500).json({erorr:error}) 
+    }
 }
 //to add a new project to the project table
 export async function addNewProjectControl(req,res){
@@ -15,6 +26,7 @@ export async function addNewProjectControl(req,res){
         const result= await addNewProjectServices(projectUrl) 
         res.status(200).json({message:"Project Saved",projectKey:result.project_key,success:true})
     } catch (error) {
+        console.log("Error:",error)
         res.status(500).json({erorr:error})
     }
 }
