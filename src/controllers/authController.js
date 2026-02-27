@@ -62,9 +62,9 @@ export async function requestMagicLink(req, res) {
   //console.log("controller,",req.body)
   try {
     const {email}  = req.body;
-    console.log(email)
+    //console.log(email)
     const existingUser=await getUserByEmail(email)
-    console.log("existingUser:",existingUser)
+    //console.log("existingUser:",existingUser)
     //if user is verified already check
     if(existingUser?.verified){
       return res.status(400).json({header:"You already have an account",message:"Your Account already exists, Please login",success:false})

@@ -212,6 +212,7 @@ export async function verficationEmail(email,otp){
 export async function verifyMagicLinkToken(email,token){
   const user=await getUserByEmail(email)
   const storedToken = await getMagicTokenByEmail(email);
+  console.log(storedToken)
   if(!(storedToken.length>0)){
     return {header:"Invalid or Expired Link",message:"This login link is invalid or has expired. Please request a new magic link to continue.",success:false}
   }
@@ -219,7 +220,10 @@ export async function verifyMagicLinkToken(email,token){
     await deleteMagicTokenById(user.id);
     return { header:"Expired Link",message:"This login link has expired. Please request a new magic link to continue.",success:false,expired: true };
   }
+  console.log(storedToken[0].token_hash)
+  console.log(token)
   const isValid= await bcrypt.compare(token,storedToken[0].token_hash);
+  console.log(isValid)
   if(isValid){
     await deleteMagicTokenById(user.id)
     return {header:"Verified",message:"The Magic Link is verified",success:true}
@@ -230,9 +234,10 @@ export async function verifyMagicLinkToken(email,token){
 
 export async function verifyOtpService (email, otp) {
   //console.log("verify service",email,otp)
-  const record = await getOtpByEmail(email);
+  //to get the Otp stored in the otps table
+  const storedOtp = await getOtpByEmail(email);
 
-  if (!record||record.length===0) {
+  if (!storedOtp||storedOtp.length===0) {
     return {header:"Invalid or Expired Otp",message:"The verification code is invalid or has expired. Please request a new one.",success:false};
   }
   if (new Date() > new Date(record[0].expires)) {

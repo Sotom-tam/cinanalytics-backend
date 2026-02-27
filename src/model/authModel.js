@@ -54,13 +54,13 @@ export async function storeMagicToken(user_id,token){
         return false
     }
 }
-console.log(new Date())
+
 export async function getTokenByUserId(userId){
     try {
         const result = await pool.query(`SELECT * FROM magic_tokens WHERE user_id=$1`,[userId])
         console.log("token ",result.rows[0],result.rows.length)
         if(result.rows.length>0){
-            console.log("sending")
+            //console.log("sending")
             return result.rows[0]
         }
     } catch (error) {
@@ -71,8 +71,8 @@ export async function getTokenByUserId(userId){
 export async function getMagicTokenByEmail(email){
     const id=await pool.query('SELECT id FROM users WHERE email=$1',[email])
     const userId=id.rows[0].id
-    //console.log(userId)
-    const result =await pool.query(`SELECT * FROM magic_tokens WHERE id = $1`,[userId]);
+    console.log(userId)
+    const result =await pool.query(`SELECT * FROM magic_tokens WHERE user_id = $1`,[userId]);
     console.log(result.rows)
     return result.rows;
 };
