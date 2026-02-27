@@ -1,11 +1,16 @@
 import {addNewProjectServices,verifyProjectServices} from "../services/projectServices.js"
 import {getProjectByKey,getProjectByUrl} from "../model/projectModel.js"
 
+//This route gets all projects stored in the project table
+export async function getAllProjects(){
+
+}
+//to add a new project to the project table
 export async function addNewProjectControl(req,res){
     try {
         const {projectUrl}=req.body
         //console.log(projectUrl)
-        const project=getProjectByUrl(projectUrl)
+        const project=await getProjectByUrl(projectUrl)
         if(project){return res.status(400).json({header:"Project Already Exists",message:"This website URL has already been registered as a project. Please verify the URL or open the existing project to continue.",success:false})}      
         const result= await addNewProjectServices(projectUrl) 
         res.status(200).json({message:"Project Saved",projectKey:result.project_key,success:true})
@@ -13,18 +18,19 @@ export async function addNewProjectControl(req,res){
         res.status(500).json({erorr:error})
     }
 }
-
+//This route is for the SDK
+//the SDK sends a request here to verify that it's active on the project
 export async function verifyProjectControl(req,res){
     const {projectKey,projectName}=req.body
     try {
         //if thesame app tries to send initialse again we need to block it
         const project=await getProjectByKey(projectKey)
-        //one thing to check for is if the project key does not exist
+        //to check for if the project key does not exist
         if(!project){
             return res.status(400).json({header:"Invalid Project Key",message:"This project key is invalid",success:false})
         }
         if(project.verified){
-            return res.json({message:"You are Verified"})
+            return res.status(200).json({message:"You are Verified"})
         }else{//if project with that key has not been verified before
             const result=await verifyProjectServices(req.body.projectName,req.body.projectKey)
             return res.status(200).json({message:"Project Verified",projectName:projectName,projectKey:projectKey,success:true})
