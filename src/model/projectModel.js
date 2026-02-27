@@ -18,6 +18,13 @@ export async function getProjectByUrl(projectUrl) {
     const result = await pool.query('SELECT * FROM projects WHERE project_url=$1;',[projectUrl])
     return result.rows[0]
 }
+
+export async function getAllProjectUrl() {
+    const result = await pool.query('SELECT project_url FROM projects ;')
+    //console.log(result.rows)
+    return result.rows
+}
+
 export async function getAllProjects(){
     const result=await pool.query('SELECT * FROM projects')
     return result.rows

@@ -10,14 +10,17 @@ import pool from "./db.js"
 import authRoutes from "./routes/authRoutes.js"
 import eventRoutes from "./routes/eventRoutes.js"
 import productRoutes from "./routes/projectRoutes.js"
-
+import {getAllProjectUrl} from "./model/projectModel.js"
 
 const app=express()
 app.set("trust proxy", 1);
 
 app.use(express.json())
+
+const projects = await getAllProjectUrl();
+const allowedOrigins = projects.map(p => p.project_url).filter(Boolean);
 app.use(cors({
-    origin:["https://profilecardsotom.netlify.app","https://cin-analytics.vercel.app","https://feature-tracker-sdk.vercel.app","http://127.0.0.1:3001","http://127.0.0.1:5500","http://127.0.0.1:3000","http://localhost:5173"],
+    origin:allowedOrigins,
     credentials:true
 }))
 
