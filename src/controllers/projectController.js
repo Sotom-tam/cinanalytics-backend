@@ -2,7 +2,7 @@ import {addNewProjectServices,verifyProjectServices} from "../services/projectSe
 import {getAllProjects,getProjectByKey,getProjectByUrl} from "../model/projectModel.js"
 
 //This route gets all projects stored in the project table
-export async function getAllProjectsController(){
+export async function getAllProjectsController(req,res){
     try {
         const projects=await getAllProjects()
         if(!projects){
