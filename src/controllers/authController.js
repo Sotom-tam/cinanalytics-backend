@@ -13,7 +13,7 @@ export async function checkUser(req, res) {
         res.clearCookie("connect.sid");
       });
     }
-    return res.status(401).json({ success: false, message: "Not authenticated" });
+    return res.status(401).json({ success: false, message: "Not authorized" });
   }
   return res.status(200).json({ success: true, user: req.user });
 }
