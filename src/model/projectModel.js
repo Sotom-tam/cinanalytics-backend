@@ -19,9 +19,9 @@ export async function getProjectByUrl(projectUrl) {
     return result.rows[0]
 }
 export async function getAllProjects(){
-    const result=await pool.query('SELECT * FROM projects'){
+    const result=await pool.query('SELECT * FROM projects')
         return result.rows[0]
-    }
+    
 }
 export async function updateProjects(projectName,projectKey,projectIcon) {
     const result = await pool.query('UPDATE projects SET project_name=$1, project_icon=$3,verified=true WHERE project_key=$2 RETURNING *;',[projectName,projectKey,projectIcon])
