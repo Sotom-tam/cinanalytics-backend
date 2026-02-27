@@ -240,12 +240,12 @@ export async function verifyOtpService (email, otp) {
   if (!storedOtp||storedOtp.length===0) {
     return {header:"Invalid or Expired Otp",message:"The verification code is invalid or has expired. Please request a new one.",success:false};
   }
-  if (new Date() > new Date(record[0].expires)) {
+  if (new Date() > new Date(storedOtp[0].expires)) {
     await deleteOtp(email); // remove expired OTP
     return {header:"Expired Otp",message:"Your verification code has expired. Request a new code to continue",success:false};
   }
   //console.log(record,record.otp_hash)
-  const isMatch= await bcrypt.compare(otp,record[0].otp_hash)
+  const isMatch= await bcrypt.compare(otp,storedOtp[0].otp_hash)
   //console.log(isMatch)
   if (!isMatch) {
     return {header:"Invalid Otp",message:"Invalid OTP. Please check the code and try again.",success:false,};
