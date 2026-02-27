@@ -18,11 +18,11 @@ export async function getAllProjectsController(req,res){
 //to add a new project to the project table
 export async function addNewProjectControl(req,res){
     try {
-        const {projectUrl}=req.body
+        const {projectUrl,projectName}=req.body
         //console.log(projectUrl)
         const project=await getProjectByUrl(projectUrl)
         if(project){return res.status(400).json({header:"Project Already Exists",message:"This website URL has already been registered as a project. Please verify the URL or open the existing project to continue.",success:false})}      
-        const result= await addNewProjectServices(projectUrl) 
+        const result= await addNewProjectServices(projectUrl,projectName) 
         res.status(200).json({message:"Project Saved",projectKey:result.project_key,success:true})
     } catch (error) {
         console.log("Error:",error)
@@ -43,7 +43,8 @@ export async function verifyProjectControl(req,res){
         if(project.verified){
             return res.status(200).json({message:"You are Verified"})
         }else{//if project with that key has not been verified before
-            const result=await verifyProjectServices(req.body.projectName,req.body.projectKey)
+            const {projectIcon,projectKey}=req.body
+            const result=await verifyProjectServices(projectIcon,projectKey)
             return res.status(200).json({message:"Project Verified",projectName:projectName,projectKey:projectKey,success:true})
         }
     } catch (error) {

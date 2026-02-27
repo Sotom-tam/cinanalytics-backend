@@ -25,7 +25,7 @@ export async function getUserData(req,res){
   if(user){
     return res.status(200).json(user)
   }else{
-    return res.status(401).json({header:"Wrong Email",message:"This email is not registered on Cinalytics",success:false})
+    return res.status(401).json({header:"Session Ended",message:"User is not logged in to session",success:false})
   }
 }
 

@@ -2,9 +2,9 @@ import pool from "../db.js"
 
 
 //function to store the project details
-export async function addNewProject(projectUrl,projectKey){
+export async function addNewProject(projectUrl,projectKey,projectName){
     //console.log(projectUrl,projectKey)
-    const result = await pool.query('INSERT INTO projects (project_url,project_key) VALUES ($1,$2) RETURNING *;',[projectUrl,projectKey])
+    const result = await pool.query('INSERT INTO projects (project_url,project_key,project_name) VALUES ($1,$2,$3) RETURNING *;',[projectUrl,projectKey,projectName])
     console.log(result.rows[0])
     return result.rows[0]
 }
@@ -24,8 +24,8 @@ export async function getAllProjects(){
     
 }
 //function to update the project with it's name and icon from The Site
-export async function updateProjects(projectName,projectKey,projectIcon) {
-    const result = await pool.query('UPDATE projects SET project_name=$1, project_icon=$3,verified=true WHERE project_key=$2 RETURNING *;',[projectName,projectKey,projectIcon])
+export async function updateProjects(projectIcon,projectKey) {
+    const result = await pool.query('UPDATE projects SET project_icon=$1,verified=true WHERE project_key=$2 RETURNING *;',[projectIcon,projectKey])
     return result.rows[0]
 }
 
