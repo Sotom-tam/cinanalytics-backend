@@ -21,7 +21,7 @@ const projects = await getAllProjectUrl();
 const allowedOrigins = projects.map(p => p.project_url).filter(Boolean);
 allowedOrigins.push('https://cin-analytics.vercel.app/')
 app.use(cors({
-    origin:allowedOrigins.push('https://cin-analytics.vercel.app/'),
+    origin:allowedOrigins.push('https://cin-analytics.vercel.app'),
     credentials:true
 }))
 
