@@ -14,21 +14,9 @@ export async function featureCount(){
 }
 //to store event in event table
 export async function insertInto(data) {
-    console.log("data:",data)
-    const values=[data.visitorId,
-    data.eventType,
-    data.innerText,
-    data.parentElement,
-    data.tag,
-    data.id,
-    data.classes,
-    data.ariaLabel,
-    data.role,
-    data.name,
-    data.page,
-    data.baseUrl,
-    data.timeStamp]
-    console.log(values.length)
+
+    console.log("data:",data)   
+    const eventType=data.eventType||"unknown event"
     const result=await pool.query(` INSERT INTO events (
       visitor_id,
       event_type,
@@ -52,7 +40,7 @@ export async function insertInto(data) {
     RETURNING *;`,
   [
     data.visitorId,
-    data.eventType,
+    eventType,
     data.innerText,
     data.parentElement,
     data.tag,

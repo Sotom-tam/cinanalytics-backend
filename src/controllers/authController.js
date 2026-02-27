@@ -88,11 +88,10 @@ export async function requestMagicLink(req, res) {
     if(isUser.email&&isUser.verified===true){
       return res.status(400).json({header:"You already have an account",message:"Your Account already exists, Please login",success:false})
     }else{
-      // generate secure token
+    // generate secure token and store it
     const token =await genMagicToken(email);
     //console.log(token)
-    // TODO: store hashed token in DB here
-    // send email
+    // send email. I decided to send success because of the time it takes to send the email
     res.status(200).json({ message: "Magic link sent. Please check your email" });
     // send email in background
     //console.log("📨 Attempting SMTP connection...");
@@ -109,6 +108,7 @@ export async function requestMagicLink(req, res) {
 export async function verify(req,res,next){
     //console.log(req.query.token)
     try {
+      //getting email and token from request query
         const {email,token}= req.query
         console.log("user email:",email,"Token in url:",token)
         if (!token) {

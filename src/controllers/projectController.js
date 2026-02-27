@@ -1,10 +1,12 @@
 import {addNewProjectServices,verifyProjectServices} from "../services/projectServices.js"
-import {getProjectByKey} from "../model/projectModel.js"
+import {getProjectByKey,getProjectByUrl} from "../model/projectModel.js"
 
 export async function addNewProjectControl(req,res){
     try {
         const {projectUrl}=req.body
         //console.log(projectUrl)
+        const project=getProjectByUrl(projectUrl)
+        if(project){return res.status(400).json({header:"Project Already Exists",message:"This website URL has already been registered as a project. Please verify the URL or open the existing project to continue.",success:false})}      
         const result= await addNewProjectServices(projectUrl) 
         res.status(200).json({message:"Project Saved",projectKey:result.project_key,success:true})
     } catch (error) {
@@ -34,7 +36,7 @@ export async function verifyProjectControl(req,res){
 }
 
 export async function verify(req,res){
-    const {projectKey,projectName}=req.query
+    const {projectKey,projectName}=req.body
     try{
         const project= await getProjectByKey(projectKey)
         console.log(project)
