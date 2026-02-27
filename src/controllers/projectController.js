@@ -10,7 +10,6 @@ export async function getAllProjectsController(){
         }else{
             return res.status(200).json({header:"Successful",projects:projects,success:true})
         }
-
     } catch (error) {
         console.log("Error:",error)
         res.status(500).json({erorr:error}) 
@@ -54,14 +53,14 @@ export async function verifyProjectControl(req,res){
 }
 
 export async function verify(req,res){
-    const {projectKey,projectName}=req.body
+    const {projectKey}=req.body
     try{
         const project= await getProjectByKey(projectKey)
         console.log(project)
         const isVerified=project.verified
         
         if(isVerified){
-            return  res.status(200).json({message:"Project Verified",projectName:projectName,projectKey:projectKey,success:true})
+            return  res.status(200).json({message:"Project Verified",projectName:project.projectName,projectKey:projectKey,success:true})
         }else{
             return res.status(400).json({message:"Verification Failed, ensure link in in head tag and try again.",success:false})
         }

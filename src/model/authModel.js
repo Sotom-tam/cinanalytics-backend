@@ -1,4 +1,5 @@
 import pool from "../db.js"
+import { findTokenByEmail } from "../services/authServices.js"
 
 export async function storeUserEmail(email){
     //console.log("model",email)
@@ -53,7 +54,7 @@ export async function storeMagicToken(user_id,token){
         return false
     }
 }
-
+console.log(new Date())
 export async function getTokenByUserId(userId){
     try {
         const result = await pool.query(`SELECT * FROM magic_tokens WHERE user_id=$1`,[userId])
@@ -67,14 +68,27 @@ export async function getTokenByUserId(userId){
     }
     
 }
-export const getMagicTokenByEmail = async (email) => {
-  const result =await pool.query(`SELECT * FROM magic_tokens WHERE email = $1`,[email]);
-  return result.rows[0];
+export async function getMagicTokenByEmail(email){
+    const id=await pool.query('SELECT id FROM users WHERE email=$1',[email])
+    const userId=id.rows[0].id
+    //console.log(userId)
+    const result =await pool.query(`SELECT * FROM magic_tokens WHERE id = $1`,[userId]);
+    console.log(result.rows)
+    return result.rows;
 };
-
-export const deleteMagicToken = async (email) => {
+//getMagicTokenByEmail("sotomtamunowari@gmail.com")
+export async function deleteMagicTokenByEmail (email){
   await pool.query(`DELETE FROM magic_tokens WHERE email = $1`,[email]);
 };
+export async function deleteMagicTokenById(userId) {
+  await pool.query(`DELETE FROM magic_tokens WHERE user_id = $1`, [userId]);
+}
+export async function deleteExpiredMagicTokens() {
+  const result = await pool.query(
+    `DELETE FROM magic_tokens WHERE expires < NOW() RETURNING id`
+  );
+  return result.rowCount;
+}
 
 export async function storeOtp(email,otpHash) {
     
@@ -103,7 +117,7 @@ export async function checkOtp(email){
 export const getOtpByEmail = async (email) => {
   const result =await pool.query(`SELECT * FROM otp_tokens WHERE email = $1`,[email]);
   //console.log("result.rows",result.rows)
-  return result.rows[0];
+  return result.rows;
 };
 export const deleteOtp = async (email) => {
   await pool.query(`DELETE FROM otp_tokens WHERE email = $1`,[email]);

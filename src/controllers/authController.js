@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt"
-import {genMagicToken,sendMagicLink,findTokenByEmail,sendVerificationEmail,verifyOtpService}from "../services/authServices.js"
-import {getUserByEmail,getUserById,deleteMagicToken,updateVerified} from "../model/authModel.js"
+import {genMagicToken,sendMagicLink,findTokenByEmail,sendVerificationEmail,verifyMagicLinkToken,verifyOtpService}from "../services/authServices.js"
+import {getUserByEmail,getUserById,deleteMagicTokenByEmail,updateVerified, deleteMagicTokenById} from "../model/authModel.js"
 import passport from "../config/passport.js"
 
 
@@ -20,29 +20,17 @@ export async function checkUser(req, res) {
 
 export async function getUserData(req,res){
   //user should be logged in and have a session
-  if(req.user){
-    console.log(req.user)
-  const userId=req.user.id
+  const userId=req.user?req.user.id:req.query.id
   const user= await getUserById(userId)
   if(user){
     return res.status(200).json(user)
   }else{
     return res.status(401).json({header:"Wrong Email",message:"This email is not registered on Cinalytics",success:false})
   }
-  }else{
-    const userId=req.query.id
-    console.log(userId)
-    const user= await getUserById(userId)
-    if(user){
-      console.log(user)
-    return res.status(200).json(user)
-  }else{
-    return res.status(401).json({message:"This email is not registered on Cinalytics",success:false})
-  }
-  }
 }
 
 export async function googleAuth(req,res,next){
+  //to logout any existing session from the user
   req.logout((err) => {
     if (err) return next(err);
     req.session.destroy(() => {
@@ -53,7 +41,7 @@ export async function googleAuth(req,res,next){
     });
   });
 }
-
+//runs after google auth is successfu;
 export const googleCallback = [
     passport.authenticate("google",{
     failureRedirect: `${process.env.FRONTEND_URL}`,
@@ -67,39 +55,30 @@ export const googleCallback = [
     });
   },
 ];
-export async function login(req,res,next){
-    const email=req.body.email
-    const user=await getUserByEmail(email)
-    if(!user){
-        return res.status(401).json({header:"Wrong Email",message:"This email is not registered on Cinalytics",success:false})
-    }
-    req.login(user,(err)=>{
-        if(err){return next(err)}
-        return res.status(200).json({message:"User Authenticated Successfully",success:true})
-    })     
-}
+
+//Sends a magic link to the provided email for account verification/signup.
+//Rejects the request if the user already has a verified account.
 export async function requestMagicLink(req, res) {
   //console.log("controller,",req.body)
   try {
-    const email  = req.body.email;
+    const {email}  = req.body;
     console.log(email)
-    const isUser=await getUserByEmail(email)
-    console.log(isUser)
-    if(isUser.email&&isUser.verified===true){
+    const existingUser=await getUserByEmail(email)
+    console.log("existingUser:",existingUser)
+    //if user is verified already check
+    if(existingUser?.verified){
       return res.status(400).json({header:"You already have an account",message:"Your Account already exists, Please login",success:false})
     }else{
-    // generate secure token and store it
+    //Delete Old Magic Token 
+    await deleteMagicTokenById(existingUser.id)
+    // generate new secure token and store it
     const token =await genMagicToken(email);
-    //console.log(token)
     // send email. I decided to send success because of the time it takes to send the email
     res.status(200).json({ message: "Magic link sent. Please check your email" });
     // send email in background
-    //console.log("📨 Attempting SMTP connection...");
     await sendMagicLink(email, token).catch(err =>
       console.error("Email failed:", err)
-    );
-    //console.log("✅ Email sent");
-    }
+    )}
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -110,21 +89,12 @@ export async function verify(req,res,next){
     try {
       //getting email and token from request query
         const {email,token}= req.query
-        console.log("user email:",email,"Token in url:",token)
-        if (!token) {
-        return res.status(400).send("Invalid link");
+        if (!token||!email) {
+        return res.status(400).json({header:"Invalid link",message:"This login link is invalid. Please request a new magic link to continue."});
         }
-        const user=await getUserByEmail(email)
-        console.log(user)
-        const tokens = await findTokenByEmail(email);
-        console.log("stored Token",tokens.token_hash)
-        if (!tokens) {
-          return res.status(400).json({header:"Wrong Token",message:"Token not found",success:false});
-        }
-        const isValid= await bcrypt.compare(token,tokens.token_hash);
+        const result=await verifyMagicLinkToken(email,token)
         //console.log("isValid:",isValid)
-        if(isValid){
-         // console.log("in is valid",isValid)
+        if(result.success){
           const user=await updateVerified(email);
           //console.log(user)
           req.login(user,(err)=>{
@@ -132,7 +102,7 @@ export async function verify(req,res,next){
                 return res.status(200).json({message:"User Authenticated Successfully",success:true})
             })  
         }else{
-           return res.status(401).json({message:"Invalid token",success:false})  
+           return res.status(401).json(result)  
         }  
     } catch (error) {
       console.log(error)
@@ -172,22 +142,19 @@ export const verifyOtp = async (req, res, next) => {
   try {
     const { otp ,email} = req.body;
     console.log(email,otp)   
-    const user = await getUserByEmail(email);
     // Calling service to verify otp
     const result = await verifyOtpService(email, otp);
     if(result.success){
+      const user = await getUserByEmail(email);
       req.login(user, (err) => {
       if (err) return next(err);
       delete req.session.pendingEmail;
-      return res.status(200).json({message: "Otp Verified Successfully",success: true,});
+      return res.status(200).json({header:result.header,message: "Otp Verified Successfully",success: true,});
     });
     }else{
-      return res.status(400).json({header:"Wrong Otp Code",message:result.message,success:false})
+      return res.status(400).json({header:result.header,message:result.message,success:false})
     }
   } catch (error) {
-    return res.status(400).json({
-      success: false,
-      message: error.message,
-    });
+    return res.status(400).json({success: false,message: error.message});
   }
 };

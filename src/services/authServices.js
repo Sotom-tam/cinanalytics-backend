@@ -1,8 +1,8 @@
 import bcrypt from "bcrypt"
 import pool from "../db.js"
 import crypto from "crypto"
-import { sendEmail } from "../utilis/sendmail.js"
-import {getUserByEmail,deleteMagicToken,storeUserEmail,storeMagicToken,getTokenByUserId,storeOtp,getOtpByEmail,deleteOtp,deleteUser} from "../model/authModel.js"
+import { sendEmail } from "../utils/sendmail.js"
+import {getUserByEmail,deleteMagicTokenByEmail,getMagicTokenByEmail,storeUserEmail,storeMagicToken,getTokenByUserId,storeOtp,getOtpByEmail,deleteOtp,deleteUser, deleteMagicTokenById} from "../model/authModel.js"
 import { get } from "https"
 
 
@@ -209,25 +209,46 @@ export async function verficationEmail(email,otp){
 });
     return response
 }
+export async function verifyMagicLinkToken(email,token){
+  const user=await getUserByEmail(email)
+  const storedToken = await getMagicTokenByEmail(email);
+  if(!(storedToken.length>0)){
+    return {header:"Invalid or Expired Link",message:"This login link is invalid or has expired. Please request a new magic link to continue.",success:false}
+  }
+  if (new Date() > new Date(storedToken[0].expires)) {
+    await deleteMagicTokenById(user.id);
+    return { header:"Expired Link",message:"This login link has expired. Please request a new magic link to continue.",success:false,expired: true };
+  }
+  const isValid= await bcrypt.compare(token,storedToken[0].token_hash);
+  if(isValid){
+    await deleteMagicTokenById(user.id)
+    return {header:"Verified",message:"The Magic Link is verified",success:true}
+  }else{
+    return {header:"Invalid Link",message:"This login link has expired. Please request a new magic link to continue.",success:false}
+  }
+}
 
-export const verifyOtpService= async (email, otp) => {
+export async function verifyOtpService (email, otp) {
   //console.log("verify service",email,otp)
   const record = await getOtpByEmail(email);
 
-  if (record.length<0) {
-    throw new Error("OTP not found");
+  if (!record||record.length===0) {
+    return {header:"Invalid or Expired Otp",message:"The verification code is invalid or has expired. Please request a new one.",success:false};
+  }
+  if (new Date() > new Date(record[0].expires)) {
+    await deleteOtp(email); // remove expired OTP
+    return {header:"Expired Otp",message:"Your verification code has expired. Request a new code to continue",success:false};
   }
   //console.log(record,record.otp_hash)
-  const isMatch= await bcrypt.compare(otp,record.otp_hash)
-  console.log(isMatch)
+  const isMatch= await bcrypt.compare(otp,record[0].otp_hash)
+  //console.log(isMatch)
   if (!isMatch) {
-    return {success:false,message:"Invalid OTP. Please check the code and try again."};
+    return {header:"Invalid Otp",message:"Invalid OTP. Please check the code and try again.",success:false,};
+  }else{
+    // OTP is valid → remove it
+    await deleteOtp(email);
+    return {header:"Otp Verified",meesage:"Logging you In",success:true};
   }
-  if (new Date() > record.expires) {
-    await deleteOtp(email); // remove expired OTP
-    return {success:false,message:"Your verification code has expired. Request a new code to continue"};
-  }
-  // OTP is valid → remove it
-  await deleteOtp(email);
-  return {success:true};
+  
+  
 };
