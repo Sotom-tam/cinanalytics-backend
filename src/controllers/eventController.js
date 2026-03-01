@@ -8,7 +8,7 @@ export async function fetchFeatureData(req,res) {
 }
 
 export async function storeEvent(req,res) {
-    const eventData=req.body
+    const {eventData}=req.body
     console.log("Event Data",eventData)
     const result=await insertInto(eventData) 
     console.log(result)
