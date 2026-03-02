@@ -1,7 +1,21 @@
 import { insertEvent,getProjectByProjectKey } from "../model/eventModel.js"
+import {deduplicationService} from "../services/eventServices.js"
 import {getFeatureData,getDashBoardDataAcrossProject,getProjectData} from "../services/eventServices.js"
 
 
+//deduplication middleware to prevent storing duplicate and clicks that are tied to page views
+export async function deduplicationControlller(req,res,next) {
+    const event=req.body
+    console.log("The Event:",event)
+    const result=await deduplicationService(event)
+    if(result.duplicateEvent){
+        console.log("duplicate")
+        return res.status(200).json({message:"Duplicate Event not saved"})
+    }else{
+        console.log("not duplicate")
+        next(event)
+    }
+}
 export async function fetchDashboard(req,res){
     try {
         const {summaryData,leastUsedFeatures}=await getDashBoardDataAcrossProject()

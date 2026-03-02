@@ -44,6 +44,62 @@ export async function getLeastUsedFeatures() {
   return result.rows
 }
 
+export async function getTopPerformingProject() {
+  const result=await pool.query(`WITH monthly_events AS (
+  SELECT
+    project_key,
+    visitor_id,
+    event_type,
+    feature_key,
+    date_trunc('month', to_timestamp(timestamp / 1000.0)) AS month
+  FROM events
+),
+
+-- total active users per project per month
+active_users AS (
+  SELECT
+    project_key,
+    month,
+    COUNT(DISTINCT visitor_id) AS total_active_users
+  FROM monthly_events
+  GROUP BY project_key, month
+),
+
+-- users who used any feature (clicked with feature_key)
+feature_users AS (
+  SELECT
+    project_key,
+    month,
+    COUNT(DISTINCT visitor_id) AS feature_users
+  FROM monthly_events
+  WHERE event_type = 'click'
+    AND feature_key IS NOT NULL
+  GROUP BY project_key, month
+)
+
+SELECT
+  p.project_name,
+  a.project_key,
+  a.month,
+  COALESCE(f.feature_users, 0) AS feature_users,
+  a.total_active_users,
+  ROUND(
+    COALESCE(f.feature_users, 0)::numeric
+    / NULLIF(a.total_active_users, 0) * 100,
+    2
+  ) AS engagement_rate
+FROM active_users a
+LEFT JOIN feature_users f
+  ON a.project_key = f.project_key
+ AND a.month = f.month
+LEFT JOIN projects p
+  ON p.project_key = a.project_key
+ORDER BY a.month DESC, p.project_name;`)
+
+//console.log(result.rows)
+return result.rows
+}
+getTopPerformingProject()
 export async function getLeastUsedFeaturesByProject(projectKey) {
 
   const result = await pool.query(
@@ -138,6 +194,59 @@ export async function getMostVisitedPagesByProject(projectKey) {
   //console.log("pages:",result.rows)
   return result.rows
 }
+
+//This route here is like a middleware
+//to preprocess the events before they get to the databse/
+//it checks for duplicate events, keeps the first one and deletes the other ones
+//also check for clicks that cause page to change delete click and keeps page view
+//query function to check for duplicate clicks
+export async function getDuplicateEvents(event) {
+  const {visitorId,featureKey,path,projectKey,eventType,timestamp}=event
+  const result= await pool.query(`SELECT * FROM events
+    WHERE visitor_id=$1
+      AND event_type=$2
+      AND path=$3
+      AND COALESCE(feature_key,'')=COALESCE($4,'')
+      AND project_key=$5
+      AND timestamp>=$6
+      AND ($6-timestamp)<3000 `,[visitorId,eventType,path,featureKey,projectKey,timestamp]
+    )
+  //SO if there is an event that's already saved, that's a duplicate of the one to insert
+  //we don't wanna save the duplicate
+  //also checking the timing, it won't save if the events are not more than 3 seconds 
+  //console.log(result.rows.length)
+  if(result.rows.length===0){//no duplicate
+    return false
+  }else{
+    return result.rows
+  }
+}
+export async function getClicksAfterPageView(event) {
+  const {visitorId,path,projectKey,timestamp,eventType}=event
+  const result= await pool.query(`SELECT * FROM events
+    WHERE path=$1
+    AND event_type='pageview'
+    AND $5='click'
+    AND visitor_id=$2
+    AND project_key=$3
+    AND timestamp <$4
+  `,[path,visitorId,projectKey,timestamp,eventType]
+    )
+  //SO if there is an event that's already saved, that's a duplicate of the one to insert
+  //we don't wanna save the duplicate
+  //also checking the timing, it won't save if the events are not more than 3 seconds 
+  //console.log("Length:",result.rows,result.rows.length)
+  if(result.rows.length===0){//no duplicate
+    return false
+  }else{
+    return true
+  }
+}
+export async function deleteEventById(id){
+  const result = await pool.query('DELETE FROM events WHERE id=$1 RETURNING *',[id])
+  return result.rows[0].id
+}
+
 
 //to get all the features and details about them like this:
 // {

@@ -1,5 +1,5 @@
 import {Router} from "express"
-import { storeEvent,fetchFeatureData,fetchDashboard,fetchProjectData} from "../controllers/eventController.js"
+import {deduplicationControlller,storeEvent,fetchFeatureData,fetchDashboard,fetchProjectData} from "../controllers/eventController.js"
 
 const router=Router()
 
