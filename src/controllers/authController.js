@@ -9,11 +9,12 @@ export async function checkUser(req, res) {
   if (!req.user) {
     // destroy stale session if it exists
     if (req.session) {
-      req.session.destroy(() => {
+      return req.session.destroy(() => {
         res.clearCookie("connect.sid");
+        return res.status(401).json({success: false,message: "Not authorized"});
       });
     }
-    return res.status(401).json({ success: false, message: "Not authorized" });
+    return res.status(401).json({success: false,message: "Not authorized"});
   }
   return res.status(200).json({ success: true, user: req.user });
 }

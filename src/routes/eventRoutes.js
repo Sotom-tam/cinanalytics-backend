@@ -9,3 +9,4 @@ router.get("/dashboard-data",fetchDashboard)
 router.post("/project-data",fetchProjectData)
 
 export default router
+
