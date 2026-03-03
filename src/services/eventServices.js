@@ -17,7 +17,7 @@ export async function getDashBoardDataAcrossProject(){
     const summaryData=await getSummaryStats()
     const leastUsedFeatures=await getLeastUsedFeatures()
     const projectPeformnaceData=await getTop3PerformingProjects()
-    return{summaryData:summaryData,leastUsedFeatures:leastUsedFeatures,projectPeformnaceData:projectPeformnaceData}
+    return{summaryData:summaryData,leastUsedFeatures:leastUsedFeatures,chartData:projectPeformnaceData}
 }
 
 export async function getProjectData(projectKey){

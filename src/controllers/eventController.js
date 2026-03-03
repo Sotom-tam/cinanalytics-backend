@@ -18,9 +18,9 @@ export async function deduplicationControlller(req,res,next) {
 }
 export async function fetchDashboard(req,res){
     try {
-        const {summaryData,leastUsedFeatures}=await getDashBoardDataAcrossProject()
+        const {summaryData,leastUsedFeatures,chartData}=await getDashBoardDataAcrossProject()
         console.log(summaryData,leastUsedFeatures)
-        return res.status(200).json({summaryData:summaryData,leastUsedFeatures:leastUsedFeatures})        
+        return res.status(200).json({summaryData:summaryData,leastUsedFeatures:leastUsedFeatures,chartData:chartData})        
     } catch (error) {
         console.log("Error:",error)
         res.status(500).json({error:error})
