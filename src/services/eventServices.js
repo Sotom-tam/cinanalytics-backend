@@ -1,4 +1,4 @@
-import {getProjectSummaryData,getSummaryStats,getTop3PerformingProjects,getProjectByProjectKey,getLeastUsedFeatures,getAllFeatures} from "../model/eventModel.js"
+import {getProjectSummaryData,getProjectFeatureData,getSummaryStats,getTop3PerformingProjects,getProjectByProjectKey,getLeastUsedFeatures,getAllFeatures} from "../model/eventModel.js"
 import {getDuplicateEvents,getClicksAfterPageView,deleteEventById} from "../model/eventModel.js"
 import {getLeastUsedFeaturesByProject,getMostUsedFeaturesByProject,getLeastVisitedPagesByProject,getMostVisitedPagesByProject} from "../model/eventModel.js"
 
@@ -7,7 +7,7 @@ export async function getFeatureData() {
     return data
 }
 
-export async function getFeatureDataByProjctKey() {
+export async function getFeatureDataByProjectKey() {
     const data=await getAllFeatures()
     return data
 }
@@ -25,21 +25,26 @@ export async function getProjectData(projectKey){
     const projectData= allProjectData.find((project)=>{
         return project.project_key===projectKey
     })
+    const allfeatures= await getProjectFeatureData()
+    const projectFeature= allfeatures.find((project)=>{
+        return project.project_key===projectKey
+    })
     const projectOverview=await getProjectByProjectKey(projectKey)
     const mostUsedFeatures=await getMostUsedFeaturesByProject(projectKey)
     const leastUsedFeatures=await getLeastUsedFeaturesByProject(projectKey)
     const mostVisitedPages=await getMostVisitedPagesByProject(projectKey)
     const leastVisitedPages=await getLeastVisitedPagesByProject(projectKey)
-    console.log("Project Overview:",projectOverview,"\n",
-         "Project Data:",projectData,"\n",
-       "Most Used Features:", mostUsedFeatures,"\n",
-       "Least Used Features:",leastUsedFeatures,"\n",
-       "Most Visited Pages:",mostVisitedPages,"\n",
-       "Least Visited Pages:",leastVisitedPages
-    )
+    // console.log("Project Overview:",projectOverview,"\n",
+    //      "Project Data:",projectData,"\n",
+    //    "Most Used Features:", mostUsedFeatures,"\n",
+    //    "Least Used Features:",leastUsedFeatures,"\n",
+    //    "Most Visited Pages:",mostVisitedPages,"\n",
+    //    "Least Visited Pages:",leastVisitedPages
+    // )
     return {
         projectData:projectData,
         projectOverview:projectOverview,
+        projectFeature:projectFeature,
         mostUsedFeatures: mostUsedFeatures,
         leastUsedFeatures:leastUsedFeatures,
         mostVisitedPages:mostVisitedPages,

@@ -160,6 +160,47 @@ export async function getProjectSummaryData(){
   //console.log(result.rows)
   return result.rows
 }
+export async function getProjectFeatureData(){
+  const result = await pool.query(`
+      WITH feature_usage AS (
+    SELECT
+      events.project_key,
+      projects.project_name,
+      events.feature_key,
+      events.feature_name,
+      COUNT(*) AS total_interactions,
+      COUNT(DISTINCT events.visitor_id) AS unique_users,
+      -- Categorize features based on usage
+      CASE 
+        WHEN COUNT(*) = 1 THEN 'unused'
+        WHEN COUNT(*) < 3 THEN 'least_used'
+        ELSE 'active'
+      END AS feature_status
+    FROM events
+    JOIN projects ON events.project_key = projects.project_key
+    WHERE 
+      events.timestamp >= 1649876543210  -- Your timestamp cutoff
+      AND events.feature_key IS NOT NULL
+    GROUP BY 
+      events.project_key, 
+      projects.project_name,
+      projects.project_icon,
+      events.feature_key, 
+      events.feature_name
+  )
+  SELECT 
+    project_key,
+    project_name,
+    COUNT(*) AS total_features,
+    COUNT(CASE WHEN feature_status = 'active' THEN 1 END) AS active_features,
+    COUNT(CASE WHEN feature_status = 'least_used' THEN 1 END) AS least_used_features,
+    COUNT(CASE WHEN feature_status = 'unused' THEN 1 END) AS unused_features  
+  FROM feature_usage
+  GROUP BY project_key, project_name
+  ORDER BY active_features DESC;`)
+  //console.log(result.rows)
+  return result.rows
+}
 
 
 export async function getLeastUsedFeaturesByProject(projectKey) {
@@ -318,9 +359,11 @@ export async function deleteEventById(id){
 //     total_interactions: '2',
 //     unique_users: '2'
 // }
+
+
+
 export async function getAllFeatures() {
   const cutoff = Date.now() - (7 * 24 * 60 * 60 * 1000);
-
   const result = await pool.query(
     `SELECT events.feature_key,events.feature_name,events.project_key,projects.project_name,
       COUNT(*) AS total_interactions,
@@ -332,10 +375,10 @@ export async function getAllFeatures() {
       AND events.feature_key IS NOT NULL
       AND events.timestamp >= $1
     GROUP BY events.feature_key, events.feature_name, events.project_key,projects.project_name
-    ORDER BY events.project_key, total_interactions DESC;`,
+    ORDER BY total_interactions DESC;`,
     [cutoff]
   );
-  //console.log(result.rows)
+  console.log("All features:",result.rows)
   return result.rows
 }
 //Looks like
