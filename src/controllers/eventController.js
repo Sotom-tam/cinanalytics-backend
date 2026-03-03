@@ -31,17 +31,19 @@ export async function fetchDashboard(req,res){
 export async function fetchProjectData(req,res){
     try {
        const {projectKey}=req.body
-    if(!projectKey){
+       //console.log(projectKey)
+    if(projectKey){
         const project=await getProjectByProjectKey(projectKey)
+        //console.log('Project Found:',project)
         if(project){
             const projectData=await getProjectData(projectKey)
-            console.log("Project Data:",data)
+            console.log("Project Data:",projectData)
             return res.status(200).json({projectData,success:true})
         }else{
-            return res.status(500).json({message:"Something went wrong",success:false})
+            return res.status(400).json({message:"Project not saved on Cinalytics",success:false})
         }
     }else{
-        return res.status(400).json({message:"Invalid Project key",success:false})
+        return res.status(400).json({message:"Project Key not found",success:false})
     } 
     } catch (error) {
         console.log("Error:",error)

@@ -3,6 +3,7 @@ import pool from "../db.js"
 
 export async  function getProjectByProjectKey(projectKey){
   const result =await pool.query(`SELECT * FROM projects WHERE project_key=$1`,[projectKey])
+  //console.log(result.rows)
   return result.rows[0]
 }
 
@@ -95,7 +96,7 @@ export async function getTop3PerformingProjects() {
   //console.log(result.rows)
   return result.rows
 }
-
+getProjectByProjectKey('')
 export async function getProjectSummaryData(){
   const result=await pool.query(`
     WITH overall_total AS (
@@ -160,7 +161,6 @@ export async function getProjectSummaryData(){
   return result.rows
 }
 
-getProjectSummaryData()
 
 export async function getLeastUsedFeaturesByProject(projectKey) {
   const result = await pool.query(
