@@ -44,62 +44,49 @@ export async function getLeastUsedFeatures() {
   return result.rows
 }
 
-export async function getTopPerformingProject() {
-  const result=await pool.query(`WITH monthly_events AS (
-  SELECT
-    project_key,
-    visitor_id,
-    event_type,
-    feature_key,
-    date_trunc('month', to_timestamp(timestamp / 1000.0)) AS month
-  FROM events
-),
+export async function getTop3PerformingProjects() {
+  const result=await pool.query(`
+    WITH monthly_totals AS (
+    SELECT 
+        DATE_TRUNC('month', TO_TIMESTAMP(timestamp/1000)) AS month_value,
+        COUNT(*) AS total_interactions_per_month
+    FROM events
+    WHERE TO_TIMESTAMP(timestamp/1000) < '2026-01-01'::date
+    GROUP BY DATE_TRUNC('month', TO_TIMESTAMP(timestamp/1000))
+    ),
+    project_totals AS (
+    SELECT 
+        events.project_key,
+        COUNT(CASE WHEN events.event_type = 'click' THEN 1 END) AS total_project_interactions
+    FROM events
+    WHERE TO_TIMESTAMP(events.timestamp/1000) < '2026-01-01'::date
+    GROUP BY events.project_key
+    ORDER BY total_project_interactions DESC
+    LIMIT 3
+    )
+    SELECT events.project_key,
+    projects.project_name,
+    TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'Month') AS month_name,
+    COUNT (events.event_type='click') AS project_interactions,
+    ROUND(COUNT (events.event_type='click')::NUMERIC/monthly_totals.total_interactions_per_month * 100) AS percentage_interactions,
+    projects.project_icon,
+    DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000)) AS month_value
+    FROM events
+    JOIN projects ON events.project_key=projects.project_key
+    JOIN project_totals ON  events.project_key=project_totals.project_key
+    LEFT JOIN monthly_totals ON DATE_TRUNC('month', TO_TIMESTAMP(events.timestamp/1000)) = monthly_totals.month_value
+    WHERE TO_TIMESTAMP(events.timestamp/1000)<'2026-01-01'::date
+    GROUP BY events.project_key,
+    projects.project_name,
+    projects.project_icon,
+    monthly_totals.total_interactions_per_month,
+    DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000)),TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'Month')
+    ORDER BY MIN(DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000))),events.project_key ASC`)
 
--- total active users per project per month
-active_users AS (
-  SELECT
-    project_key,
-    month,
-    COUNT(DISTINCT visitor_id) AS total_active_users
-  FROM monthly_events
-  GROUP BY project_key, month
-),
-
--- users who used any feature (clicked with feature_key)
-feature_users AS (
-  SELECT
-    project_key,
-    month,
-    COUNT(DISTINCT visitor_id) AS feature_users
-  FROM monthly_events
-  WHERE event_type = 'click'
-    AND feature_key IS NOT NULL
-  GROUP BY project_key, month
-)
-
-SELECT
-  p.project_name,
-  a.project_key,
-  a.month,
-  COALESCE(f.feature_users, 0) AS feature_users,
-  a.total_active_users,
-  ROUND(
-    COALESCE(f.feature_users, 0)::numeric
-    / NULLIF(a.total_active_users, 0) * 100,
-    2
-  ) AS engagement_rate
-FROM active_users a
-LEFT JOIN feature_users f
-  ON a.project_key = f.project_key
- AND a.month = f.month
-LEFT JOIN projects p
-  ON p.project_key = a.project_key
-ORDER BY a.month DESC, p.project_name;`)
-
-//console.log(result.rows)
-return result.rows
+  //console.log(result.rows)
+  return result.rows
 }
-getTopPerformingProject()
+
 export async function getLeastUsedFeaturesByProject(projectKey) {
 
   const result = await pool.query(

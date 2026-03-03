@@ -1,4 +1,4 @@
-import {getSummaryStats,getTopPerformingProject,getProjectByProjectKey,getLeastUsedFeatures,getAllFeatures} from "../model/eventModel.js"
+import {getSummaryStats,getTop3PerformingProjects,getProjectByProjectKey,getLeastUsedFeatures,getAllFeatures} from "../model/eventModel.js"
 import {getDuplicateEvents,getClicksAfterPageView,deleteEventById} from "../model/eventModel.js"
 import {getLeastUsedFeaturesByProject,getMostUsedFeaturesByProject,getLeastVisitedPagesByProject,getMostVisitedPagesByProject} from "../model/eventModel.js"
 
@@ -16,7 +16,7 @@ export async function getFeatureDataByProjctKey() {
 export async function getDashBoardDataAcrossProject(){
     const summaryData=await getSummaryStats()
     const leastUsedFeatures=await getLeastUsedFeatures()
-    const projectPeformnaceData=await getTopPerformingProject()
+    const projectPeformnaceData=await getTop3PerformingProjects()
     return{summaryData:summaryData,leastUsedFeatures:leastUsedFeatures,projectPeformnaceData:projectPeformnaceData}
 }
 
