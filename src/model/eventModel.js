@@ -96,8 +96,73 @@ export async function getTop3PerformingProjects() {
   return result.rows
 }
 
-export async function getLeastUsedFeaturesByProject(projectKey) {
+export async function getProjectSummaryData(){
+  const result=await pool.query(`
+    WITH overall_total AS (
+    SELECT COUNT(*) AS all_projects_total FROM events
+  ),
+  visitor_events AS (
+    SELECT
+      *,
+      LAG(timestamp) OVER (PARTITION BY visitor_id ORDER BY timestamp) AS prev_ts
+    FROM events
+  ),
+  sessionized AS (
+    SELECT
+      *,
+      SUM(
+        CASE 
+          WHEN prev_ts IS NULL THEN 1
+          WHEN (timestamp - prev_ts) > 30 * 60 * 1000 THEN 1 -- 30 minutes gap in ms
+          ELSE 0
+        END
+      ) OVER (PARTITION BY visitor_id ORDER BY timestamp) AS session_number
+    FROM visitor_events
+  ),
+  session_time_data AS(
+  SELECT visitor_id, project_key, session_number,
+  (MAX(timestamp)-MIN(timestamp))/1000 AS session_time_secs,
+  (MAX(timestamp)-MIN(timestamp))/60000 AS session_time_mins,
+  MIN(timestamp) AS session_start, MAX(timestamp) AS session_end
+  FROM sessionized
+  GROUP BY visitor_id, session_number,project_key
+  ORDER BY visitor_id, session_start,project_key
+  ),
+  project_details AS(
+    SELECT events.project_key,
+    COUNT (DISTINCT visitor_id) AS project_users,
+    COUNT (CASE WHEN event_type = 'click' THEN 1 END ) AS project_interactions,
+    ROUND(
+      (COUNT(CASE WHEN event_type = 'click' THEN 1 END)::NUMERIC / COUNT(*) * 100), 
+      2
+    ) AS click_percentage
+    FROM events
+    GROUP BY project_key
+  )
+  SELECT session_time_data.project_key,projects.project_name,
+  project_details.project_users,
+  project_details.project_interactions,
+  overall_total.all_projects_total AS total_interactions,
+  ROUND((project_details.project_interactions::numeric/overall_total.all_projects_total) *100) AS percentage_interactions,
+  ROUND(AVG(session_time_mins),3) AS average_session_time
+  FROM session_time_data
+  JOIN projects ON projects.project_key=session_time_data.project_key
+  JOIN project_details ON project_details.project_key=session_time_data.project_key
+  CROSS JOIN overall_total
+  GROUP BY session_time_data.project_key,
+  project_details.project_users,
+  project_details.project_interactions,
+  projects.project_name,
+  overall_total.all_projects_total
+  ORDER BY project_details.project_users DESC
+  `)
+  //console.log(result.rows)
+  return result.rows
+}
 
+getProjectSummaryData()
+
+export async function getLeastUsedFeaturesByProject(projectKey) {
   const result = await pool.query(
     `SELECT
       events.project_key,

@@ -1,4 +1,4 @@
-import {getSummaryStats,getTop3PerformingProjects,getProjectByProjectKey,getLeastUsedFeatures,getAllFeatures} from "../model/eventModel.js"
+import {getProjectSummaryData,getSummaryStats,getTop3PerformingProjects,getProjectByProjectKey,getLeastUsedFeatures,getAllFeatures} from "../model/eventModel.js"
 import {getDuplicateEvents,getClicksAfterPageView,deleteEventById} from "../model/eventModel.js"
 import {getLeastUsedFeaturesByProject,getMostUsedFeaturesByProject,getLeastVisitedPagesByProject,getMostVisitedPagesByProject} from "../model/eventModel.js"
 
@@ -21,19 +21,25 @@ export async function getDashBoardDataAcrossProject(){
 }
 
 export async function getProjectData(projectKey){
-    const projectData=await getProjectByProjectKey(projectKey)
+    const allProjectData= await getProjectSummaryData()
+    const projectData= allProjectData.find((project)=>{
+        return project.project_key===projectKey
+    })
+    const projectOverview=await getProjectByProjectKey(projectKey)
     const mostUsedFeatures=await getMostUsedFeaturesByProject(projectKey)
     const leastUsedFeatures=await getLeastUsedFeaturesByProject(projectKey)
     const mostVisitedPages=await getMostVisitedPagesByProject(projectKey)
     const leastVisitedPages=await getLeastVisitedPagesByProject(projectKey)
-    // console.log("Project Overview:",projectData,"\n",
-    //    "Most Used Features:", mostUsedFeatures,"\n",
-    //    "Least Used Features:",leastUsedFeatures,"\n",
-    //    "Most Visited Pages:",mostVisitedPages,"\n",
-    //    "Least Visited Pages:",leastVisitedPages
-    // )
+    console.log("Project Overview:",projectOverview,"\n",
+         "Project Data:",projectData,"\n",
+       "Most Used Features:", mostUsedFeatures,"\n",
+       "Least Used Features:",leastUsedFeatures,"\n",
+       "Most Visited Pages:",mostVisitedPages,"\n",
+       "Least Visited Pages:",leastVisitedPages
+    )
     return {
-        projectOverview:projectData,
+        projectData:projectData,
+        projectOverview:projectOverview,
         mostUsedFeatures: mostUsedFeatures,
         leastUsedFeatures:leastUsedFeatures,
         mostVisitedPages:mostVisitedPages,

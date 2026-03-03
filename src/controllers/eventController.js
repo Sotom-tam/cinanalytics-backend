@@ -32,7 +32,7 @@ export async function fetchProjectData(req,res){
     try {
        const {projectKey}=req.body
     if(!projectKey){
-        const project=await getProjectByProjectKey()
+        const project=await getProjectByProjectKey(projectKey)
         if(project){
             const projectData=await getProjectData(projectKey)
             console.log("Project Data:",data)

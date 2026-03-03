@@ -353,3 +353,40 @@ INSERT INTO events (project_key, visitor_id, event_type, path, url, title, page_
 ('proj_16abddba0d405800', 'v_03657a63b41142b6177250010010', 'pageview', '/', 'https://feature-tracker-sdk.vercel.app/', 'Interactive Demo App', 'Home', '', 'pushState', '', '', '', '', '', '', '', '', '', '', '', '', '', 1759363200000),
 ('proj_16abddba0d405800', 'v_2a781564652bb991772500110011', 'pageview', '/contact', 'https://feature-tracker-sdk.vercel.app/contact', 'Contact Us', 'contact', '', 'pushState', '', '', '', '', '', '', '', '', '', '', '', '', '', 1762041600000),
 ('proj_16abddba0d405800', 'v_03657a63b41142b6177250010010', 'pageview', '/', 'https://feature-tracker-sdk.vercel.app/', 'Interactive Demo App', 'Home', '', 'pushState', '', '', '', '', '', '', '', '', '', '', '', '', '', 1764633600000);
+
+WITH monthly_totals AS (
+    SELECT 
+        DATE_TRUNC('month', TO_TIMESTAMP(timestamp/1000)) AS month_value,
+        COUNT(*) AS total_interactions_per_month
+    FROM events
+    WHERE TO_TIMESTAMP(timestamp/1000) < '2026-01-01'::date
+    GROUP BY DATE_TRUNC('month', TO_TIMESTAMP(timestamp/1000))
+),
+project_totals AS (
+    SELECT 
+        events.project_key,
+        COUNT(CASE WHEN events.event_type = 'click' THEN 1 END) AS total_project_interactions
+    FROM events
+    WHERE TO_TIMESTAMP(events.timestamp/1000) < '2026-01-01'::date
+    GROUP BY events.project_key
+    ORDER BY total_project_interactions DESC
+    LIMIT 3
+)
+SELECT events.project_key,
+projects.project_name,
+TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'Month') AS month_name,
+COUNT (events.event_type='click') AS project_interactions,
+ROUND(COUNT (events.event_type='click')::NUMERIC/monthly_totals.total_interactions_per_month * 100) AS percentage_interactions,
+projects.project_icon,
+DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000)) AS month_value
+FROM events
+JOIN projects ON events.project_key=projects.project_key
+JOIN project_totals ON  events.project_key=project_totals.project_key
+LEFT JOIN monthly_totals ON DATE_TRUNC('month', TO_TIMESTAMP(events.timestamp/1000)) = monthly_totals.month_value
+WHERE TO_TIMESTAMP(events.timestamp/1000)<'2026-01-01'::date
+GROUP BY events.project_key,
+projects.project_name,
+projects.project_icon,
+monthly_totals.total_interactions_per_month,
+DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000)),TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'Month')
+ORDER BY MIN(DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000))),events.project_key ASC
