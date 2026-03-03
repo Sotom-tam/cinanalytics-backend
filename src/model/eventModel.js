@@ -9,12 +9,21 @@ export async  function getProjectByProjectKey(projectKey){
 export async function getSummaryStats() {
   const cutoff = Date.now() - (7 * 24 * 60 * 60 * 1000);
   const { rows } = await pool.query(`
-    SELECT COUNT(DISTINCT project_key)   AS connected_projects,
-      COUNT(DISTINCT CASE WHEN timestamp >= $1 THEN project_key END) AS active_projects,
-      COUNT(DISTINCT CASE WHEN timestamp>$1 THEN visitor_id END) AS active_users,
-      COUNT(DISTINCT CASE WHEN event_type != 'pageview' THEN feature_key END) AS features_tracked
-    FROM events`,[cutoff]);
-  //console.log("Model Row:",rows)
+    WITH connected_projects AS(
+      SELECT 
+      COUNT(*) AS connected_projects_count
+      FROM projects
+      WHERE verified=true
+    )
+    SELECT connected_projects.connected_projects_count AS connected_projects,
+          COUNT(DISTINCT CASE WHEN timestamp >= $1 THEN project_key END) AS active_projects,
+          COUNT(DISTINCT CASE WHEN timestamp > $1 THEN visitor_id END) AS active_users,
+          COUNT(DISTINCT CASE WHEN event_type != 'pageview' THEN feature_key END) AS features_tracked
+    FROM events
+    CROSS JOIN connected_projects
+    GROUP BY connected_projects.connected_projects_count
+    `,[cutoff]);
+  console.log("Model Row:",rows)
   return rows[0];
 }
 
