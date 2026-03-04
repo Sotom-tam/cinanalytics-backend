@@ -101,7 +101,8 @@ export async function getTop3PerformingProjects() {
     )
     SELECT events.project_key,
     projects.project_name,
-    TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'Month') AS month_name,
+    TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'Month') AS Month,
+    TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'YYYY') AS Year,
     COUNT (events.event_type='click') AS project_interactions,
     ROUND(COUNT (events.event_type='click')::NUMERIC/monthly_totals.total_interactions_per_month * 100) AS percentage_interactions,
     projects.project_icon,
@@ -110,17 +111,18 @@ export async function getTop3PerformingProjects() {
     JOIN projects ON events.project_key=projects.project_key
     JOIN project_totals ON  events.project_key=project_totals.project_key
     LEFT JOIN monthly_totals ON DATE_TRUNC('month', TO_TIMESTAMP(events.timestamp/1000)) = monthly_totals.month_value
-    WHERE TO_TIMESTAMP(events.timestamp/1000)<'2026-01-01'::date
     GROUP BY events.project_key,
     projects.project_name,
     projects.project_icon,
     monthly_totals.total_interactions_per_month,
-    DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000)),TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'Month')
-    ORDER BY MIN(DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000))),events.project_key ASC`)
-
-  //console.log(result.rows)
+    DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000)),TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'Month'),
+    DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000)),TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'YYYY')
+    ORDER BY MIN(DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000))) DESC,events.project_key ASC`)
+  console.log(result.rows)
   return result.rows
 }
+
+
 
 export async function getProjectSummaryData(){
   const result=await pool.query(`
