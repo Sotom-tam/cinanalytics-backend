@@ -75,10 +75,10 @@ FROM ranked
 ORDER BY feature_rank_in_project, project_key;`,
     [cutoff]
   );
-  console.log(result.rows)
+  console.log(cutoff)
   return result.rows
 }
-
+getLeastUsedFeatures()
 export async function getTop3PerformingProjects() {
   const result=await pool.query(`
     WITH monthly_totals AS (

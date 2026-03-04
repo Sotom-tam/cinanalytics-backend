@@ -13,6 +13,6 @@ router.get("/google",googleAuth)
 router.get("/google/callback",googleCallback)
 router.get("/get-user",getUserData)
 router.get("/check-user",checkUser)
-router.get("/logout-user",logoutUser)
+router.get("/logout",logoutUser)
 
 export default router
