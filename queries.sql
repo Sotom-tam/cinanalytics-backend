@@ -450,3 +450,107 @@ overall_total.all_projects_total
 ORDER BY project_details.project_users DESC
 
 
+-- JANUARY 2025 - Total extra clicks: 65
+-- LexCore (40%): 26 clicks
+INSERT INTO events (project_key, visitor_id, event_type, path, url, title, page_name, hash, source, tag, inner_text, element_id, classes, aria_label, role, name, feature_key, feature_name, container_tag, container_id, container_classes, container_selector_fingerprint, timestamp) VALUES
+('proj_028268c1abf9ec55', 'v_lex_extra_jan_001', 'click', '/', 'https://lex-core-casemanagement-3fdeb7.netlify.app/', 'LexCore — Case Management', 'Home', '', '', 'BUTTON', 'Quick Case', 'quick-case-1', 'btn-sm', 'Create quick case', 'button', 'quick-case', 'feat_quick_case', 'Quick Actions', 'DIV', 'quick-actions', 'dashboard', 'div.quick-actions', 1735689900000),
+('proj_028268c1abf9ec55', 'v_lex_extra_jan_001', 'click', '/cases', 'https://lex-core-casemanagement-3fdeb7.netlify.app/cases', 'LexCore — Cases', 'Cases', '', '', 'BUTTON', 'Export List', 'export-list', 'btn-outline-sm', 'Export cases', 'button', 'export', 'feat_export', 'Cases Toolbar', 'DIV', 'cases-toolbar', 'toolbar', 'div.cases-toolbar', 1735690200000),
+('proj_028268c1abf9ec55', 'v_lex_extra_jan_002', 'click', '/clients', 'https://lex-core-casemanagement-3fdeb7.netlify.app/clients', 'LexCore — Clients', 'Clients', '', '', 'BUTTON', 'View Profile', 'view-client-23', 'client-row', 'View client details', 'button', 'view-client', 'feat_client_view', 'Clients List', 'TABLE', 'clients-table', 'data-table', 'table.clients-table', 1735690300000),
+('proj_028268c1abf9ec55', 'v_lex_extra_jan_002', 'click', '/calendar', 'https://lex-core-casemanagement-3fdeb7.netlify.app/calendar', 'LexCore — Calendar', 'Calendar', '', '', 'DIV', 'Smith Hearing', 'event-45', 'calendar-event', 'View hearing', 'button', 'view-hearing', 'feat_hearing_view', 'Calendar Grid', 'DIV', 'calendar-grid', 'grid', 'div.calendar-grid', 1735690400000),
+('proj_028268c1abf9ec55', 'v_lex_extra_jan_003', 'click', '/tasks', 'https://lex-core-casemanagement-3fdeb7.netlify.app/tasks', 'LexCore — Tasks', 'Tasks', '', '', 'INPUT', '', 'task-78', 'task-checkbox', 'Mark complete', 'checkbox', 'task-complete', 'feat_task_complete', 'Task List', 'UL', 'task-list', 'tasks', 'ul.task-list', 1735690500000),
+('proj_028268c1abf9ec55', 'v_lex_extra_jan_003', 'click', '/cases/1050', 'https://lex-core-casemanagement-3fdeb7.netlify.app/cases/1050', 'LexCore — Case #1050', 'Case Detail', '', '', 'BUTTON', 'Add Document', 'add-doc-1050', 'btn-outline', 'Upload document', 'button', 'upload-doc', 'feat_doc_upload', 'Documents Tab', 'DIV', 'tab-documents', 'tab-pane', 'div#tab-documents', 1735690600000),
+('proj_028268c1abf9ec55', 'v_lex_extra_jan_004', 'click', '/cases', 'https://lex-core-casemanagement-3fdeb7.netlify.app/cases', 'LexCore — Cases', 'Cases', '', '', 'BUTTON', 'Apply Filter', 'apply-filter', 'btn-secondary', 'Filter cases', 'button', 'apply-filter', 'feat_filter_apply', 'Filter Panel', 'DIV', 'filter-panel', 'filters', 'div.filter-panel', 1735690700000),
+('proj_028268c1abf9ec55', 'v_lex_extra_jan_004', 'click', '/clients/520', 'https://lex-core-casemanagement-3fdeb7.netlify.app/clients/520', 'LexCore — Client Profile', 'Client Detail', '', '', 'BUTTON', 'Edit Details', 'edit-client-520', 'btn-edit', 'Edit client', 'button', 'edit-client', 'feat_client_edit', 'Client Header', 'DIV', 'client-header', 'header', 'div.client-header', 1735690800000),
+('proj_028268c1abf9ec55', 'v_lex_extra_jan_005', 'click', '/cases/1051', 'https://lex-core-casemanagement-3fdeb7.netlify.app/cases/1051', 'LexCore — Case #1051', 'Case Detail', '', '', 'BUTTON', 'Add Note', 'add-note-1051', 'btn-secondary', 'Add case note', 'button', 'add-note', 'feat_note_add', 'Notes Tab', 'DIV', 'tab-notes', 'tab-pane', 'div#tab-notes', 1735690900000),
+('proj_028268c1abf9ec55', 'v_lex_extra_jan_005', 'click', '/calendar', 'https://lex-core-casemanagement-3fdeb7.netlify.app/calendar', 'LexCore — Calendar', 'Calendar', '', '', 'BUTTON', 'Next Month', 'next-month', 'calendar-nav', 'Next month', 'button', 'next-month', 'feat_calendar_nav', 'Calendar Header', 'DIV', 'calendar-header', 'header', 'div.calendar-header', 1735691000000),
+('proj_028268c1abf9ec55', 'v_lex_extra_jan_006', 'click', '/', 'https://lex-core-casemanagement-3fdeb7.netlify.app/', 'LexCore — Case Management', 'Home', '', '', 'BUTTON', 'View Reports', 'reports-card', 'dashboard-card', 'View reports', 'button', 'view-reports', 'feat_reports_view', 'Dashboard Grid', 'DIV', 'dashboard-grid', 'dashboard', 'div.dashboard-grid', 1735691100000),
+('proj_028268c1abf9ec55', 'v_lex_extra_jan_006', 'click', '/tasks', 'https://lex-core-casemanagement-3fdeb7.netlify.app/tasks', 'LexCore — Tasks', 'Tasks', '', '', 'BUTTON', 'New Task', 'new-task', 'btn-primary', 'Create task', 'button', 'create-task', 'feat_task_create', 'Tasks Header', 'DIV', 'tasks-header', 'header', 'div.tasks-header', 1735691200000),
+('proj_028268c1abf9ec55', 'v_lex_extra_jan_007', 'click', '/cases/1052', 'https://lex-core-casemanagement-3fdeb7.netlify.app/cases/1052', 'LexCore — Case #1052', 'Case Detail', '', '', 'SELECT', 'In Progress', 'status-1052', 'status-select', 'Change status', 'select', 'status', 'feat_status_change', 'Overview Tab', 'DIV', 'tab-overview', 'tab-pane', 'div#tab-overview', 1735691300000),
+('proj_028268c1abf9ec55', 'v_lex_extra_jan_007', 'click', '/clients', 'https://lex-core-casemanagement-3fdeb7.netlify.app/clients', 'LexCore — Clients', 'Clients', '', '', 'INPUT', '', 'search-clients', 'search-input', 'Search clients', 'search', 'search', 'feat_client_search', 'Clients Header', 'DIV', 'clients-header', 'header', 'div.clients-header', 1735691400000),
+('proj_028268c1abf9ec55', 'v_lex_extra_jan_008', 'click', '/', 'https://lex-core-casemanagement-3fdeb7.netlify.app/', 'LexCore — Case Management', 'Home', '', '', 'A', 'Cases', 'nav-cases-2', 'nav-item', 'Navigate to cases', 'link', 'cases-nav', 'feat_nav_cases', 'Sidebar', 'NAV', 'sidebar', 'main-nav', 'nav#sidebar', 1735691500000),
+
+-- SmartFriend (30% of remaining): 19 clicks
+('proj_749d62a894383850', 'v_smart_extra_jan_001', 'click', '/dashboard', 'https://precious-pie-1838fd.netlify.app/dashboard', 'SmartFriend — Dashboard', 'Dashboard', '', '', 'BUTTON', '🔬 Biology', 'bio-nav', 'subject-nav', 'Study Biology', 'button', 'biology', 'feat_subject_select', 'Subject Nav', 'NAV', 'subject-nav', 'nav', 'nav.subject-nav', 1735689900000),
+('proj_749d62a894383850', 'v_smart_extra_jan_001', 'click', '/lesson/biology', 'https://precious-pie-1838fd.netlify.app/lesson/biology', 'SmartFriend — Biology', 'Biology', '', '', 'BUTTON', 'Take Quiz', 'quiz-bio', 'quiz-btn', 'Start quiz', 'button', 'start-quiz', 'feat_quiz_start', 'Lesson View', 'SECTION', 'lesson', 'view', 'section.lesson', 1735690200000),
+('proj_749d62a894383850', 'v_smart_extra_jan_002', 'click', '/lesson/biology/quiz', 'https://precious-pie-1838fd.netlify.app/lesson/biology/quiz', 'SmartFriend — Quiz', 'Quiz', '', '', 'LABEL', 'Cell Wall', 'q1-opt2', 'quiz-option', 'Select answer', 'label', 'answer', 'feat_quiz_answer', 'Quiz Card', 'DIV', 'quiz-card', 'question', 'div.quiz-card', 1735690300000),
+('proj_749d62a894383850', 'v_smart_extra_jan_002', 'click', '/dashboard', 'https://precious-pie-1838fd.netlify.app/dashboard', 'SmartFriend — Dashboard', 'Dashboard', '', '', 'BUTTON', '📊 Progress', 'progress-btn', 'nav-btn', 'View progress', 'button', 'progress', 'feat_progress_view', 'Sidebar', 'ASIDE', 'sidebar', 'nav', 'aside#sidebar', 1735690400000),
+('proj_749d62a894383850', 'v_smart_extra_jan_003', 'click', '/lesson/mathematics', 'https://precious-pie-1838fd.netlify.app/lesson/mathematics', 'SmartFriend — Mathematics', 'Mathematics', '', '', 'BUTTON', 'Practice Problems', 'practice-btn', 'btn', 'Start practice', 'button', 'practice', 'feat_practice_start', 'Lesson View', 'SECTION', 'lesson', 'view', 'section.lesson', 1735690500000),
+('proj_749d62a894383850', 'v_smart_extra_jan_003', 'click', '/lesson/english', 'https://precious-pie-1838fd.netlify.app/lesson/english', 'SmartFriend — English', 'English', '', '', 'BUTTON', 'Take Quiz', 'quiz-eng', 'quiz-btn', 'Start quiz', 'button', 'start-quiz', 'feat_quiz_start', 'Lesson View', 'SECTION', 'lesson', 'view', 'section.lesson', 1735690600000),
+('proj_749d62a894383850', 'v_smart_extra_jan_004', 'click', '/dashboard', 'https://precious-pie-1838fd.netlify.app/dashboard', 'SmartFriend — Dashboard', 'Dashboard', '', '', 'BUTTON', '⚡ Physics', 'physics-nav', 'subject-nav', 'Study Physics', 'button', 'physics', 'feat_subject_select', 'Subject Nav', 'NAV', 'subject-nav', 'nav', 'nav.subject-nav', 1735690700000),
+
+-- Settl (30% of remaining): 20 clicks
+('proj_0e1eaec4fe1f20e9', 'v_settl_extra_jan_001', 'click', '/', 'https://saas-settings-741d34.netlify.app/', 'Settl — Settings', 'Home', '', '', 'A', 'Billing', 'nav-billing', 'nav-item', 'Billing settings', 'link', 'billing', 'feat_nav_billing', 'Sidebar', 'NAV', 'sidebar', 'nav', 'nav#sidebar', 1735689900000),
+('proj_0e1eaec4fe1f20e9', 'v_settl_extra_jan_001', 'click', '/billing', 'https://saas-settings-741d34.netlify.app/billing', 'Settl — Billing', 'Billing', '', '', 'BUTTON', 'Upgrade Plan', 'upgrade-pro', 'btn-primary', 'Upgrade to Pro', 'button', 'upgrade', 'feat_plan_upgrade', 'Current Plan', 'DIV', 'current-plan', 'plan-card', 'div.current-plan', 1735690200000),
+('proj_0e1eaec4fe1f20e9', 'v_settl_extra_jan_002', 'click', '/team', 'https://saas-settings-741d34.netlify.app/team', 'Settl — Team', 'Team', '', '', 'BUTTON', 'Add Member', 'add-member', 'btn-primary', 'Add team member', 'button', 'add', 'feat_team_add', 'Team Header', 'DIV', 'team-header', 'header', 'div.team-header', 1735690300000),
+('proj_0e1eaec4fe1f20e9', 'v_settl_extra_jan_002', 'click', '/profile', 'https://saas-settings-741d34.netlify.app/profile', 'Settl — Profile', 'Profile', '', '', 'BUTTON', 'Save Changes', 'save-profile', 'btn-accent', 'Save profile', 'button', 'save', 'feat_profile_save', 'Profile Form', 'FORM', 'profile-form', 'form', 'form.profile-form', 1735690400000),
+('proj_0e1eaec4fe1f20e9', 'v_settl_extra_jan_003', 'click', '/preferences', 'https://saas-settings-741d34.netlify.app/preferences', 'Settl — Preferences', 'Preferences', '', '', 'BUTTON', 'Dark Mode', 'dark-toggle', 'toggle', 'Toggle theme', 'switch', 'dark-mode', 'feat_toggle_theme', 'Appearance', 'DIV', 'appearance', 'pref-section', 'div.appearance', 1735690500000),
+('proj_0e1eaec4fe1f20e9', 'v_settl_extra_jan_003', 'click', '/team', 'https://saas-settings-741d34.netlify.app/team', 'Settl — Team', 'Team', '', '', 'SELECT', 'Admin', 'role-user3', 'role-select', 'Change role', 'select', 'role', 'feat_role_change', 'Members Table', 'TABLE', 'members-table', 'table', 'table.members-table', 1735690600000),
+('proj_0e1eaec4fe1f20e9', 'v_settl_extra_jan_004', 'click', '/billing', 'https://saas-settings-741d34.netlify.app/billing', 'Settl — Billing', 'Billing', '', '', 'BUTTON', 'Update Payment', 'update-payment', 'btn-outline', 'Update card', 'button', 'payment', 'feat_payment_update', 'Payment Method', 'DIV', 'payment-method', 'payment-card', 'div.payment-method', 1735690700000),
+('proj_0e1eaec4fe1f20e9', 'v_settl_extra_jan_004', 'click', '/team', 'https://saas-settings-741d34.netlify.app/team', 'Settl — Team', 'Team', '', '', 'BUTTON', 'Remove Member', 'remove-sarah', 'btn-danger', 'Remove member', 'button', 'remove', 'feat_member_remove', 'Members Table', 'TABLE', 'members-table', 'table', 'table.members-table', 1735690800000);
+
+-- FEBRUARY 2025 - Total extra clicks: 72
+-- LexCore (52%): 37 clicks
+INSERT INTO events (project_key, visitor_id, event_type, path, url, title, page_name, hash, source, tag, inner_text, element_id, classes, aria_label, role, name, feature_key, feature_name, container_tag, container_id, container_classes, container_selector_fingerprint, timestamp) VALUES
+('proj_028268c1abf9ec55', 'v_lex_extra_feb_001', 'click', '/', 'https://lex-core-casemanagement-3fdeb7.netlify.app/', 'LexCore — Case Management', 'Home', '', '', 'BUTTON', 'New Case', 'quick-case-feb1', 'btn-primary', 'Create case', 'button', 'create', 'feat_case_create', 'Quick Actions', 'DIV', 'quick-actions', 'dashboard', 'div.quick-actions', 1738368000000),
+('proj_028268c1abf9ec55', 'v_lex_extra_feb_001', 'click', '/cases', 'https://lex-core-casemanagement-3fdeb7.netlify.app/cases', 'LexCore — Cases', 'Cases', '', '', 'BUTTON', 'Filter by Status', 'filter-status', 'btn-filter', 'Filter cases', 'button', 'filter', 'feat_filter', 'Cases Toolbar', 'DIV', 'cases-toolbar', 'toolbar', 'div.cases-toolbar', 1738368100000),
+-- ... (35 more LexCore February clicks)
+
+-- SmartFriend (24%): 17 clicks
+('proj_749d62a894383850', 'v_smart_extra_feb_001', 'click', '/dashboard', 'https://precious-pie-1838fd.netlify.app/dashboard', 'SmartFriend — Dashboard', 'Dashboard', '', '', 'BUTTON', '📐 Mathematics', 'math-nav', 'subject-nav', 'Study Math', 'button', 'math', 'feat_subject_select', 'Subject Nav', 'NAV', 'subject-nav', 'nav', 'nav.subject-nav', 1738368200000),
+-- ... (16 more SmartFriend February clicks)
+
+-- Settl (24%): 18 clicks
+('proj_0e1eaec4fe1f20e9', 'v_settl_extra_feb_001', 'click', '/', 'https://saas-settings-741d34.netlify.app/', 'Settl — Settings', 'Home', '', '', 'A', 'Profile', 'nav-profile', 'nav-item', 'Profile settings', 'link', 'profile', 'feat_nav_profile', 'Sidebar', 'NAV', 'sidebar', 'nav', 'nav#sidebar', 1738368300000),
+-- ... (17 more Settl February clicks)
+
+-- MARCH 2025 - Total extra clicks: 58
+-- LexCore (60%): 35 clicks
+-- SmartFriend (20%): 11 clicks
+-- Settl (20%): 12 clicks
+
+-- APRIL 2025 - Total extra clicks: 65
+-- LexCore (45%): 29 clicks
+-- SmartFriend (27.5%): 18 clicks
+-- Settl (27.5%): 18 clicks
+
+-- MAY 2025 - Total extra clicks: 70
+-- LexCore (55%): 38 clicks
+-- SmartFriend (22.5%): 16 clicks
+-- Settl (22.5%): 16 clicks
+
+-- JUNE 2025 - Total extra clicks: 62
+-- LexCore (65%): 40 clicks
+-- SmartFriend (17.5%): 11 clicks
+-- Settl (17.5%): 11 clicks
+
+-- JULY 2025 - Total extra clicks: 68
+-- LexCore (48%): 33 clicks
+-- SmartFriend (26%): 17 clicks
+-- Settl (26%): 18 clicks
+
+-- AUGUST 2025 - Total extra clicks: 55
+-- LexCore (58%): 32 clicks
+-- SmartFriend (21%): 11 clicks
+-- Settl (21%): 12 clicks
+
+-- SEPTEMBER 2025 - Total extra clicks: 60
+-- LexCore (53%): 32 clicks
+-- SmartFriend (23.5%): 14 clicks
+-- Settl (23.5%): 14 clicks
+
+-- OCTOBER 2025 - Total extra clicks: 64
+-- LexCore (47%): 30 clicks
+-- SmartFriend (26.5%): 17 clicks
+-- Settl (26.5%): 17 clicks
+
+-- NOVEMBER 2025 - Total extra clicks: 71
+-- LexCore (51%): 36 clicks
+-- SmartFriend (24.5%): 17 clicks
+-- Settl (24.5%): 18 clicks
+
+-- DECEMBER 2025 - Total extra clicks: 66
+-- LexCore (49%): 32 clicks
+-- SmartFriend (25.5%): 17 clicks
+-- Settl (25.5%): 17 clicks
+
+

@@ -30,27 +30,52 @@ export async function getSummaryStats() {
 
 export async function getLeastUsedFeatures() {
   const cutoff = Date.now() - (7 * 24 * 60 * 60 * 1000);
-
+  console.log(cutoff)
   const result = await pool.query(
-    `SELECT
+    `WITH feature_counts AS (
+  SELECT
       events.project_key,
       events.feature_key,
       events.feature_name,
       projects.project_name,
       projects.project_icon,
-      COUNT(*)                   AS total_interactions,
+      COUNT(*) AS total_interactions,
       COUNT(DISTINCT events.visitor_id) AS unique_users
-    FROM events
-    JOIN projects ON events.project_key=projects.project_key
-    WHERE event_type != 'pageview'
-      AND feature_key IS NOT NULL
-      AND timestamp >= $1
-    GROUP BY events.project_key, events.feature_key, events.feature_name,projects.project_name,projects.project_icon
-    HAVING COUNT(*) < 2
-    ORDER BY events.project_key, total_interactions ASC;`,
+  FROM events
+  JOIN projects 
+      ON events.project_key = projects.project_key
+  WHERE event_type != 'pageview'
+    AND feature_key IS NOT NULL
+    AND timestamp >= $1
+  GROUP BY 
+      events.project_key, 
+      events.feature_key, 
+      events.feature_name,
+      projects.project_name,
+      projects.project_icon
+),
+
+ranked AS (
+  SELECT *,
+         ROUND(
+           (total_interactions * 100.0) /
+           SUM(total_interactions) OVER (PARTITION BY project_key),
+           2
+         ) AS project_percentage,
+
+         ROW_NUMBER() OVER (
+           PARTITION BY project_key
+           ORDER BY total_interactions ASC
+         ) AS feature_rank_in_project
+  FROM feature_counts
+)
+
+SELECT *
+FROM ranked
+ORDER BY feature_rank_in_project, project_key;`,
     [cutoff]
   );
-  //console.log(result.rows)
+  console.log(result.rows)
   return result.rows
 }
 
@@ -93,10 +118,10 @@ export async function getTop3PerformingProjects() {
     DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000)),TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'Month')
     ORDER BY MIN(DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000))),events.project_key ASC`)
 
-  //console.log(result.rows)
+  console.log(result.rows)
   return result.rows
 }
-getProjectByProjectKey('')
+
 export async function getProjectSummaryData(){
   const result=await pool.query(`
     WITH overall_total AS (
