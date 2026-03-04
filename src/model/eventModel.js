@@ -30,55 +30,122 @@ export async function getSummaryStats() {
 
 export async function getLeastUsedFeatures() {
   const cutoff = Date.now() - (7 * 24 * 60 * 60 * 1000);
-  console.log(cutoff)
-  const result = await pool.query(
-    `WITH feature_counts AS (
-  SELECT
+  //console.log(cutoff)
+  const result = await pool.query(`WITH monthly_project_totals AS (
+  -- First, get total interactions per project per month
+  SELECT 
+      events.project_key,
+      DATE_TRUNC('month', TO_TIMESTAMP(events.timestamp/1000)) AS month_date,
+      TO_CHAR(TO_TIMESTAMP(events.timestamp/1000), 'Month') AS month_name,
+      EXTRACT(MONTH FROM TO_TIMESTAMP(events.timestamp/1000)) AS month_num,
+      EXTRACT(YEAR FROM TO_TIMESTAMP(events.timestamp/1000)) AS year,
+      TO_CHAR(TO_TIMESTAMP(events.timestamp/1000), 'YYYY-MM') AS year_month,
+      COUNT(*) AS total_project_interactions
+  FROM events
+  WHERE event_type != 'pageview'
+    AND feature_key IS NOT NULL
+  GROUP BY 
+      events.project_key,
+      DATE_TRUNC('month', TO_TIMESTAMP(events.timestamp/1000)),
+      TO_CHAR(TO_TIMESTAMP(events.timestamp/1000), 'Month'),
+      EXTRACT(MONTH FROM TO_TIMESTAMP(events.timestamp/1000)),
+      EXTRACT(YEAR FROM TO_TIMESTAMP(events.timestamp/1000)),
+      TO_CHAR(TO_TIMESTAMP(events.timestamp/1000), 'YYYY-MM')
+),
+feature_monthly_counts AS (
+  -- Then, get interactions per feature per project per month
+  SELECT 
       events.project_key,
       events.feature_key,
       events.feature_name,
-      projects.project_name,
-      projects.project_icon,
-      COUNT(*) AS total_interactions,
-      COUNT(DISTINCT events.visitor_id) AS unique_users
+      DATE_TRUNC('month', TO_TIMESTAMP(events.timestamp/1000)) AS month_date,
+      TO_CHAR(TO_TIMESTAMP(events.timestamp/1000), 'Month') AS month_name,
+      EXTRACT(MONTH FROM TO_TIMESTAMP(events.timestamp/1000)) AS month_num,
+      EXTRACT(YEAR FROM TO_TIMESTAMP(events.timestamp/1000)) AS year,
+      TO_CHAR(TO_TIMESTAMP(events.timestamp/1000), 'YYYY-MM') AS year_month,
+      COUNT(*) AS feature_interactions
   FROM events
-  JOIN projects 
-      ON events.project_key = projects.project_key
   WHERE event_type != 'pageview'
     AND feature_key IS NOT NULL
-    AND timestamp >= $1
   GROUP BY 
-      events.project_key, 
-      events.feature_key, 
+      events.project_key,
+      events.feature_key,
       events.feature_name,
-      projects.project_name,
-      projects.project_icon
+      DATE_TRUNC('month', TO_TIMESTAMP(events.timestamp/1000)),
+      TO_CHAR(TO_TIMESTAMP(events.timestamp/1000), 'Month'),
+      EXTRACT(MONTH FROM TO_TIMESTAMP(events.timestamp/1000)),
+      EXTRACT(YEAR FROM TO_TIMESTAMP(events.timestamp/1000)),
+      TO_CHAR(TO_TIMESTAMP(events.timestamp/1000), 'YYYY-MM')
 ),
-
-ranked AS (
-  SELECT *,
-         ROUND(
-           (total_interactions * 100.0) /
-           SUM(total_interactions) OVER (PARTITION BY project_key),
-           2
-         ) AS project_percentage,
-
-         ROW_NUMBER() OVER (
-           PARTITION BY project_key
-           ORDER BY total_interactions ASC
-         ) AS feature_rank_in_project
-  FROM feature_counts
+ranked_features AS (
+  -- Rank features within each project and month by interactions (ascending)
+  -- Added feature_name to ORDER BY for alphabetical tie-breaking
+  SELECT 
+      f.project_key,
+      f.feature_key,
+      f.feature_name,
+      f.month_name,
+      f.month_num,
+      f.year,
+      f.year_month,
+      f.feature_interactions,
+      p.total_project_interactions,
+      ROUND(
+        (f.feature_interactions * 100.0) / NULLIF(p.total_project_interactions, 0),
+        1
+      ) AS percentage,
+      ROW_NUMBER() OVER (
+        PARTITION BY f.project_key, f.year_month
+        ORDER BY f.feature_interactions ASC, f.feature_name ASC  -- 👈 Alphabetical tie-breaker
+      ) AS rank_in_month
+  FROM feature_monthly_counts f
+  JOIN monthly_project_totals p 
+      ON f.project_key = p.project_key 
+      AND f.year_month = p.year_month
 )
-
-SELECT *
-FROM ranked
-ORDER BY feature_rank_in_project, project_key;`,
-    [cutoff]
-  );
-  console.log(cutoff)
+-- Get the TOP 2 least used features (rank 1 and 2) for each project each month
+SELECT 
+    r.project_key,
+    p.project_name,
+    p.project_icon,
+    r.month_name,
+    r.year,
+    r.year_month,
+    CASE 
+        WHEN r.month_num BETWEEN 1 AND 3 THEN 'Q1'
+        WHEN r.month_num BETWEEN 4 AND 6 THEN 'Q2'
+        WHEN r.month_num BETWEEN 7 AND 9 THEN 'Q3'
+        WHEN r.month_num BETWEEN 10 AND 12 THEN 'Q4'
+    END AS quarter,
+    CONCAT(
+        'Q',
+        CASE 
+            WHEN r.month_num BETWEEN 1 AND 3 THEN '1'
+            WHEN r.month_num BETWEEN 4 AND 6 THEN '2'
+            WHEN r.month_num BETWEEN 7 AND 9 THEN '3'
+            WHEN r.month_num BETWEEN 10 AND 12 THEN '4'
+        END,
+        '-',
+        r.year
+    ) AS quarter_year,
+    r.feature_key,
+    r.feature_name,
+    r.feature_interactions,
+    r.total_project_interactions,
+    r.percentage
+FROM ranked_features r
+JOIN projects p ON r.project_key = p.project_key
+WHERE p.verified = true     -- Only verified projects
+  AND r.rank_in_month <= 2   -- ONLY ranks 1 and 2 (top 2 least used)
+ORDER BY 
+    r.year ASC,
+    r.month_num ASC,
+    r.project_key ASC,
+    r.rank_in_month ASC;`);
+  //console.log(result.rows)
   return result.rows
 }
-getLeastUsedFeatures()
+
 export async function getTop3PerformingProjects() {
   const result=await pool.query(`
     WITH monthly_totals AS (
