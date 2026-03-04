@@ -118,7 +118,7 @@ export async function getTop3PerformingProjects() {
     DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000)),TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'Month')
     ORDER BY MIN(DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000))),events.project_key ASC`)
 
-  console.log(result.rows)
+  //console.log(result.rows)
   return result.rows
 }
 

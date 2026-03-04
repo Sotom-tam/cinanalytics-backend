@@ -30,6 +30,35 @@ export async function getUserData(req,res){
   }
 }
 
+export async function logoutUser(req, res, next) {
+  try {
+    // Passport logout (removes req.user)
+    req.logout(function (err) {
+      if (err) return next(err);
+      // Destroy session completely
+      req.session.destroy((err) => {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            message: "Could not log out, please try again",
+          });
+        }
+        // Clear session cookie
+        res.clearCookie("connect.sid");
+        return res.status(200).json({
+          success: true,
+          message: "Logged out successfully",
+        });
+      });
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+    });
+  }
+}
+
 export async function googleAuth(req,res,next){
   //to logout any existing session from the user
   req.logout((err) => {
