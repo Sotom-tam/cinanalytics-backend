@@ -394,7 +394,7 @@ export async function getLeastUsedFeaturesByProject(projectKey) {
   WHERE events.project_key=$1
   GROUP BY events.project_key`,[projectKey])
   const featureCount=rows[0].feature_count
-  const limit=featureCount/2
+  const limit=Math.floor(featureCount/2)
   const result = await pool.query(
     `SELECT
       events.project_key,
