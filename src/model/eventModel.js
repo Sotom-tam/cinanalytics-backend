@@ -314,8 +314,6 @@ SELECT
   COALESCE(tw.project_key, lw.project_key) AS project_key,
   projects.project_name,
   projects.project_icon,
-  
-
   -- This week stats
   COALESCE(tw.interactions_this_week, 0) AS project_interactions_this_week,
   CASE 
@@ -395,12 +393,12 @@ export async function getLeastUsedFeaturesByProject(projectKey) {
       COUNT(DISTINCT events.visitor_id) AS unique_users
     FROM events
     JOIN projects ON events.project_key=projects.project_key
-    WHERE event_type != 'pageview'
-      AND events.feature_key IS NOT NULL
-      AND events.project_key=$1
+    WHERE event_type='click'
+    AND events.project_key=$1
     GROUP BY events.project_key, events.feature_key, events.feature_name,projects.project_icon
-    HAVING COUNT(*) < 2
-    ORDER BY events.project_key, total_interactions ASC;`,
+    HAVING COUNT(*) <= 4
+    ORDER BY events.project_key ASC,total_interactions ASC
+    LIMIT 7`,
     [projectKey]
   );
   //console.log(result.rows)
@@ -420,18 +418,16 @@ export async function getMostUsedFeaturesByProject(projectKey) {
       COUNT(DISTINCT events.visitor_id) AS unique_users
     FROM events
     JOIN projects ON events.project_key=projects.project_key
-    WHERE event_type != 'pageview'
-      AND events.feature_key IS NOT NULL
-      AND events.project_key=$1
+    WHERE event_type='click'
+    AND events.project_key=$1
     GROUP BY events.project_key, events.feature_key, events.feature_name,projects.project_icon
-    HAVING COUNT(*) >= 2
-    ORDER BY events.project_key, total_interactions ASC;`,
-    [projectKey]
+    HAVING COUNT(*) >5
+    ORDER BY events.project_key ASC,total_interactions DESC
+    LIMIT 7`,[projectKey]
   );
   //console.log(result.rows)
   return result.rows
 }
-
 
 export async function getLeastVisitedPagesByProject(projectKey) {
 
