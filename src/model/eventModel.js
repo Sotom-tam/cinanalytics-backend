@@ -192,68 +192,155 @@ export async function getTop3PerformingProjects() {
 
 
 export async function getProjectSummaryData(){
-  const result=await pool.query(`
-    WITH overall_total AS (
+  const result=await pool.query(`WITH 
+  date_ranges AS (
+    SELECT 
+      -- This week (last 7 days)
+      EXTRACT(epoch FROM NOW() - INTERVAL '7 days') * 1000 AS this_week_start,
+      EXTRACT(epoch FROM NOW()) * 1000 AS this_week_end,
+      -- Last week (previous 7 days)
+      EXTRACT(epoch FROM NOW() - INTERVAL '14 days') * 1000 AS last_week_start,
+      EXTRACT(epoch FROM NOW() - INTERVAL '7 days') * 1000 AS last_week_end
+  ),
+  
+  -- Overall total (for percentage calculation)
+  overall_total AS (
     SELECT COUNT(*) AS all_projects_total FROM events
   ),
-  visitor_events AS (
+  
+  -- This week's data
+  this_week_events AS (
+    SELECT 
+      project_key,
+      visitor_id,
+      event_type,
+      timestamp
+    FROM events
+    WHERE timestamp >= (SELECT this_week_start FROM date_ranges)
+      AND timestamp < (SELECT this_week_end FROM date_ranges)
+  ),
+  this_week_visitor_events AS (
     SELECT
       *,
       LAG(timestamp) OVER (PARTITION BY visitor_id ORDER BY timestamp) AS prev_ts
-    FROM events
+    FROM this_week_events
   ),
-  sessionized AS (
+  this_week_sessionized AS (
     SELECT
       *,
       SUM(
         CASE 
           WHEN prev_ts IS NULL THEN 1
-          WHEN (timestamp - prev_ts) > 30 * 60 * 1000 THEN 1 -- 30 minutes gap in ms
+          WHEN (timestamp - prev_ts) > 30 * 60 * 1000 THEN 1
           ELSE 0
         END
       ) OVER (PARTITION BY visitor_id ORDER BY timestamp) AS session_number
-    FROM visitor_events
+    FROM this_week_visitor_events
   ),
-  session_time_data AS(
-  SELECT visitor_id, project_key, session_number,
-  (MAX(timestamp)-MIN(timestamp))/1000 AS session_time_secs,
-  (MAX(timestamp)-MIN(timestamp))/60000 AS session_time_mins,
-  MIN(timestamp) AS session_start, MAX(timestamp) AS session_end
-  FROM sessionized
-  GROUP BY visitor_id, session_number,project_key
-  ORDER BY visitor_id, session_start,project_key
+  this_week_session_time AS (
+    SELECT 
+      visitor_id, 
+      project_key, 
+      session_number,
+      event_type,  -- Include event_type here
+      (MAX(timestamp) OVER (PARTITION BY visitor_id, session_number, project_key) - 
+       MIN(timestamp) OVER (PARTITION BY visitor_id, session_number, project_key))/1000 AS session_time_secs,
+      (MAX(timestamp) OVER (PARTITION BY visitor_id, session_number, project_key) - 
+       MIN(timestamp) OVER (PARTITION BY visitor_id, session_number, project_key))/60000 AS session_time_mins
+    FROM this_week_sessionized
   ),
-  project_details AS(
-    SELECT events.project_key,
-    COUNT (DISTINCT visitor_id) AS project_users,
-    COUNT (CASE WHEN event_type = 'click' THEN 1 END ) AS project_interactions,
-    ROUND(
-      (COUNT(CASE WHEN event_type = 'click' THEN 1 END)::NUMERIC / COUNT(*) * 100), 
-      2
-    ) AS click_percentage
+  this_week_project_stats AS (
+    SELECT 
+      project_key,
+      COUNT(DISTINCT visitor_id) AS active_users_this_week,
+      COUNT(CASE WHEN event_type = 'click' THEN 1 END) AS interactions_this_week,
+      ROUND(AVG(session_time_mins), 1) AS avg_session_time_this_week
+    FROM this_week_session_time
+    GROUP BY project_key
+  ),
+  
+  -- Last week's data
+  last_week_events AS (
+    SELECT 
+      project_key,
+      visitor_id,
+      event_type,
+      timestamp
     FROM events
+    WHERE timestamp >= (SELECT last_week_start FROM date_ranges)
+      AND timestamp < (SELECT last_week_end FROM date_ranges)
+  ),
+  last_week_visitor_events AS (
+    SELECT
+      *,
+      LAG(timestamp) OVER (PARTITION BY visitor_id ORDER BY timestamp) AS prev_ts
+    FROM last_week_events
+  ),
+  last_week_sessionized AS (
+    SELECT
+      *,
+      SUM(
+        CASE 
+          WHEN prev_ts IS NULL THEN 1
+          WHEN (timestamp - prev_ts) > 30 * 60 * 1000 THEN 1
+          ELSE 0
+        END
+      ) OVER (PARTITION BY visitor_id ORDER BY timestamp) AS session_number
+    FROM last_week_visitor_events
+  ),
+  last_week_session_time AS (
+    SELECT 
+      visitor_id, 
+      project_key, 
+      session_number,
+      event_type,  -- Include event_type here
+      (MAX(timestamp) OVER (PARTITION BY visitor_id, session_number, project_key) - 
+       MIN(timestamp) OVER (PARTITION BY visitor_id, session_number, project_key))/1000 AS session_time_secs,
+      (MAX(timestamp) OVER (PARTITION BY visitor_id, session_number, project_key) - 
+       MIN(timestamp) OVER (PARTITION BY visitor_id, session_number, project_key))/60000 AS session_time_mins
+    FROM last_week_sessionized
+  ),
+  last_week_project_stats AS (
+    SELECT 
+      project_key,
+      COUNT(DISTINCT visitor_id) AS active_users_last_week,
+      COUNT(CASE WHEN event_type = 'click' THEN 1 END) AS interactions_last_week,
+      ROUND(AVG(session_time_mins), 1) AS avg_session_time_last_week
+    FROM last_week_session_time
     GROUP BY project_key
   )
-  SELECT session_time_data.project_key,projects.project_name,
-  project_details.project_users,
-  project_details.project_interactions,
-  overall_total.all_projects_total AS total_interactions,
-  ROUND((project_details.project_interactions::numeric/overall_total.all_projects_total) *100) AS percentage_interactions,
-  ROUND(AVG(session_time_mins),3) AS average_session_time
-  FROM session_time_data
-  JOIN projects ON projects.project_key=session_time_data.project_key
-  JOIN project_details ON project_details.project_key=session_time_data.project_key
-  CROSS JOIN overall_total
-  GROUP BY session_time_data.project_key,
-  project_details.project_users,
-  project_details.project_interactions,
+-- Final SELECT combining all metrics
+SELECT 
+  COALESCE(tw.project_key, lw.project_key) AS project_key,
   projects.project_name,
-  overall_total.all_projects_total
-  ORDER BY project_details.project_users DESC
-  `)
+  projects.project_icon,
+  
+
+  -- This week stats
+  COALESCE(tw.interactions_this_week, 0) AS project_interactions_this_week,
+  CASE 
+    WHEN COALESCE(lw.interactions_last_week, 0) > 0 
+    THEN ROUND(((COALESCE(tw.interactions_this_week, 0) - lw.interactions_last_week)::NUMERIC / lw.interactions_last_week * 100),1)
+    ELSE 0
+  END AS project_interactions_change_percent,
+
+  COALESCE(tw.active_users_this_week, 0) AS active_users_this_week,
+  ROUND(COALESCE(tw.active_users_this_week, 0)-COALESCE(lw.active_users_last_week, 0)) AS active_users_difference,
+
+  COALESCE(tw.avg_session_time_this_week, 0) AS avg_session_time_this_week,
+  ROUND(COALESCE(tw.avg_session_time_this_week, 0)-COALESCE(lw.avg_session_time_last_week, 0),1) AS avg_session_time_difference
+FROM projects
+LEFT JOIN this_week_project_stats tw ON projects.project_key = tw.project_key
+LEFT JOIN last_week_project_stats lw ON projects.project_key = lw.project_key
+CROSS JOIN overall_total
+WHERE 
+  -- Only show projects that have activity in either week
+  COALESCE(tw.active_users_this_week, lw.active_users_last_week, 0) > 0
+ORDER BY COALESCE(tw.interactions_this_week, 0) DESC;`)
   //console.log(result.rows)
   return result.rows
 }
+
 export async function getProjectFeatureData(){
   const result = await pool.query(`
       WITH feature_usage AS (
