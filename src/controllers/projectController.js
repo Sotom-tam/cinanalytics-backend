@@ -18,11 +18,11 @@ export async function getAllProjectsController(req,res){
 //to add a new project to the project table
 export async function addNewProjectControl(req,res){
     try {
-        const {projectUrl,projectName}=req.body
+        const {projectUrl,projectName,projectDescription}=req.body
         //console.log(projectUrl)
         const project=await getProjectByUrl(projectUrl)
         if(project){return res.status(400).json({header:"Project Already Exists",message:"This website URL has already been registered as a project. Please verify the URL or open the existing project to continue.",success:false})}      
-        const result= await addNewProjectServices(projectUrl,projectName) 
+        const result= await addNewProjectServices(projectUrl,projectName,projectDescription) 
         res.status(200).json({message:"Project Saved",projectKey:result.project_key,success:true})
     } catch (error) {
         console.log("Error:",error)

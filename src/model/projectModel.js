@@ -2,9 +2,9 @@ import pool from "../db.js"
 
 
 //function to store the project details
-export async function addNewProject(projectUrl,projectKey,projectName){
+export async function addNewProject(projectUrl,projectKey,projectName,projectDescription){
     //console.log(projectUrl,projectKey)
-    const result = await pool.query('INSERT INTO projects (project_url,project_key,project_name) VALUES ($1,$2,$3) RETURNING *;',[projectUrl,projectKey,projectName])
+    const result = await pool.query('INSERT INTO projects (project_url,project_key,project_name,project_description) VALUES ($1,$2,$3,$4) RETURNING *;',[projectUrl,projectKey,projectName,projectDescription])
     console.log(result.rows[0])
     return result.rows[0]
 }

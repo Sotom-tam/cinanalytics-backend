@@ -2,11 +2,11 @@ import crypto from "crypto"
 
 import {addNewProject,updateProjects} from "../model/projectModel.js"
 
-export async function addNewProjectServices(projectUrl,projectName){
+export async function addNewProjectServices(projectUrl,projectName,projectDescription){
    
     const projectKey= "proj_"+generateKey(projectUrl)
     //console.log(projectKey,projectUrl)
-    const result= await addNewProject(projectUrl,projectKey,projectName)
+    const result= await addNewProject(projectUrl,projectKey,projectName,projectDescription)
     return result
 }
 
