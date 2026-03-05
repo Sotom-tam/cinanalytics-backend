@@ -3,7 +3,7 @@ import pool from "../db.js"
 
 export async  function getProjectByProjectKey(projectKey){
   const result =await pool.query(`SELECT * FROM projects WHERE project_key=$1`,[projectKey])
-  //console.log(result.rows)
+  console.log(result.rows)
   return result.rows[0]
 }
 
@@ -31,6 +31,12 @@ export async function getSummaryStats() {
 export async function getLeastUsedFeatures() {
   const cutoff = Date.now() - (7 * 24 * 60 * 60 * 1000);
   //console.log(cutoff)
+  const featureCount=await pool.query(`SELECT events.project_key,
+  COUNT(DISTINCT events.feature_key) AS feature_count,
+  COUNT(*) AS project_total_interactions
+    FROM events
+  
+  GROUP BY events.project_key`)
   const result = await pool.query(`WITH monthly_project_totals AS (
   -- First, get total interactions per project per month
   SELECT 
@@ -383,6 +389,12 @@ export async function getProjectFeatureData(){
 
 
 export async function getLeastUsedFeaturesByProject(projectKey) {
+  const {rows}=await pool.query(`SELECT COUNT(DISTINCT events.feature_key) AS feature_count
+  FROM events
+  WHERE events.project_key=$1
+  GROUP BY events.project_key`,[projectKey])
+  const featureCount=rows[0].feature_count
+  const limit=featureCount/2
   const result = await pool.query(
     `SELECT
       events.project_key,
@@ -396,18 +408,21 @@ export async function getLeastUsedFeaturesByProject(projectKey) {
     WHERE event_type='click'
     AND events.project_key=$1
     GROUP BY events.project_key, events.feature_key, events.feature_name,projects.project_icon
-    HAVING COUNT(*) <= 4
     ORDER BY events.project_key ASC,total_interactions ASC
-    LIMIT 7`,
-    [projectKey]
+    LIMIT $2`,
+    [projectKey,limit]
   );
   //console.log(result.rows)
   return result.rows
 }
 
-
 export async function getMostUsedFeaturesByProject(projectKey) {
-
+  const {rows}=await pool.query(`SELECT COUNT(DISTINCT events.feature_key) AS feature_count
+  FROM events
+  WHERE events.project_key=$1
+  GROUP BY events.project_key`,[projectKey])
+  const featureCount=rows[0].feature_count
+  const limit=featureCount/2
   const result = await pool.query(
     `SELECT
       events.project_key,
@@ -421,16 +436,20 @@ export async function getMostUsedFeaturesByProject(projectKey) {
     WHERE event_type='click'
     AND events.project_key=$1
     GROUP BY events.project_key, events.feature_key, events.feature_name,projects.project_icon
-    HAVING COUNT(*) >5
     ORDER BY events.project_key ASC,total_interactions DESC
-    LIMIT 7`,[projectKey]
+    LIMIT $2`,[projectKey,limit]
   );
   //console.log(result.rows)
   return result.rows
 }
 
 export async function getLeastVisitedPagesByProject(projectKey) {
-
+  const {rows}=await pool.query(`SELECT COUNT(DISTINCT events.page_name) AS page_count
+  FROM events
+  WHERE events.project_key=$1
+  GROUP BY events.project_key`,[projectKey])
+  const pageCount=rows[0].page_count
+  const limit=Math.floor(pageCount/2)
   const result = await pool.query(
     `SELECT
       events.project_key,
@@ -443,17 +462,23 @@ export async function getLeastVisitedPagesByProject(projectKey) {
     WHERE event_type = 'pageview'
       AND events.project_key=$1
     GROUP BY events.project_key,events.page_name,projects.project_icon
-    HAVING COUNT(*) < 2
-    ORDER BY events.project_key, total_interactions ASC;`,
-    [projectKey]
+    ORDER BY events.project_key, total_interactions ASC
+    LIMIT $2;`,
+    [projectKey,limit]
   );
   //console.log("pages:",result.rows)
   return result.rows
 }
 
+getMostVisitedPagesByProject('proj_16abddba0d405800')
 
 export async function getMostVisitedPagesByProject(projectKey) {
-
+  const {rows}=await pool.query(`SELECT COUNT(DISTINCT events.page_name) AS page_count
+  FROM events
+  WHERE events.project_key=$1
+  GROUP BY events.project_key`,[projectKey])
+  const pageCount=rows[0].page_count
+  const limit=Math.floor(pageCount/2)
   const result = await pool.query(
     `SELECT
       events.project_key,
@@ -466,9 +491,9 @@ export async function getMostVisitedPagesByProject(projectKey) {
     WHERE event_type = 'pageview'
       AND events.project_key=$1
     GROUP BY events.project_key,events.page_name,projects.project_icon
-    HAVING COUNT(*) >= 2
-    ORDER BY events.project_key, total_interactions ASC;`,
-    [projectKey]
+    ORDER BY events.project_key, total_interactions ASC
+    LIMIT $2;`,
+    [projectKey,limit]
   );
   //console.log("pages:",result.rows)
   return result.rows
