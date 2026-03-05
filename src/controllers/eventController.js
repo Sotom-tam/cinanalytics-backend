@@ -34,7 +34,7 @@ export async function fetchProjectData(req,res){
        //console.log(projectKey)
     if(projectKey){
         const project=await getProjectByProjectKey(projectKey)
-        //console.log('Project Found:',project)
+        console.log('Project Found:',project)
         if(project){
             const projectData=await getProjectData(projectKey)
             console.log("Project Data:",projectData)
