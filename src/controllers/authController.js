@@ -63,13 +63,11 @@ export async function googleAuth(req,res,next){
   //to logout any existing session from the user
   req.logout((err) => {
     if (err) return next(err);
-    req.session.destroy(() => {
       passport.authenticate("google", {
         scope: ["profile", "email"],
         failureRedirect: `${process.env.FRONTEND_URL}`,
       })(req, res, next);
     });
-  });
 }
 //runs after google auth is successfu;
 export const googleCallback = [
