@@ -389,55 +389,171 @@ export async function getProjectFeatureData(){
 
 
 export async function getLeastUsedFeaturesByProject(projectKey) {
-  const {rows}=await pool.query(`SELECT COUNT(DISTINCT events.feature_key) AS feature_count
+  const result = await pool.query(`
+    WITH project_details AS(
+  SELECT events.project_key,
+  COUNT(DISTINCT events.feature_key) AS feature_count,
+  COUNT(*) AS project_total_interactions
+    FROM events
+  GROUP BY events.project_key
+),
+feature_details AS(
+  SELECT events.project_key,events.feature_key,COUNT(feature_key) as feature_total_interactions
   FROM events
-  WHERE events.project_key=$1
-  GROUP BY events.project_key`,[projectKey])
-  const featureCount=rows[0].feature_count
-  const limit=Math.floor(featureCount/2)
-  const result = await pool.query(
-    `SELECT
+  GROUP BY events.feature_key,events.project_key
+),
+feature_monthly_interactions AS(
+SELECT
+    project_key,
+    feature_key,
+    DATE_TRUNC('month', TO_TIMESTAMP(timestamp/1000)) AS month,
+    COUNT(*) AS interactions
+FROM events
+WHERE event_type='click'
+GROUP BY
+    project_key,
+    feature_key,
+    DATE_TRUNC('month', TO_TIMESTAMP(timestamp/1000))
+),
+feature_rank AS (
+    SELECT
+        project_key,
+        feature_key,
+        feature_total_interactions,
+        ROW_NUMBER() OVER(
+            PARTITION BY project_key
+            ORDER BY feature_total_interactions ASC
+        ) AS feature_rank_month
+    FROM feature_details
+)
+SELECT
       events.project_key,
       events.feature_key,
       events.feature_name,
+      TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'Month') AS month,
+      CASE  
+      WHEN EXTRACT(MONTH FROM (TO_TIMESTAMP(events.timestamp/1000))) BETWEEN 1 AND 3 THEN 'Q1'
+      WHEN EXTRACT(MONTH FROM (TO_TIMESTAMP(events.timestamp/1000))) BETWEEN 4 AND 6 THEN 'Q2'
+      WHEN EXTRACT(MONTH FROM (TO_TIMESTAMP(events.timestamp/1000))) BETWEEN 7 AND 9 THEN 'Q3'
+      WHEN EXTRACT(MONTH FROM (TO_TIMESTAMP(events.timestamp/1000))) BETWEEN 10 AND 12 THEN 'Q4'
+      END AS quarter,
+      TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'YYYY') AS year,
+      feature_rank.feature_total_interactions as total_interactions,
+      feature_rank.feature_rank_month,
+      project_details.feature_count,
       projects.project_icon,
-      COUNT(*) AS total_interactions,
+      project_details.project_total_interactions AS project_total_interactions,
       COUNT(DISTINCT events.visitor_id) AS unique_users
     FROM events
     JOIN projects ON events.project_key=projects.project_key
+    JOIN feature_details ON events.feature_key=feature_details.feature_key
+    JOIN feature_rank
+    ON events.feature_key = feature_rank.feature_key
+    AND events.project_key = feature_rank.project_key
+    JOIN project_details ON events.project_key=project_details.project_key
     WHERE event_type='click'
     AND events.project_key=$1
-    GROUP BY events.project_key, events.feature_key, events.feature_name,projects.project_icon
-    ORDER BY events.project_key ASC,total_interactions ASC
-    LIMIT $2`,
-    [projectKey,limit]
+    AND feature_details.feature_total_interactions>1
+    AND feature_rank.feature_rank_month<ROUND((project_details.feature_count/2)+2,0)
+    GROUP BY events.project_key,
+    project_details.project_total_interactions,
+    events.feature_key, events.feature_name,
+    project_details.feature_count,
+    projects.project_icon,
+    DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000)),
+    TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'Month'),
+    TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'YYYY'),
+    feature_details.feature_total_interactions,
+    feature_rank.feature_total_interactions,
+    feature_rank.feature_rank_month,
+    EXTRACT(MONTH FROM (TO_TIMESTAMP(events.timestamp/1000)))
+    ORDER BY events.project_key ASC,DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000)) ASC,feature_details.feature_total_interactions ASC`,
+    [projectKey]
   );
   //console.log(result.rows)
   return result.rows
 }
 
 export async function getMostUsedFeaturesByProject(projectKey) {
-  const {rows}=await pool.query(`SELECT COUNT(DISTINCT events.feature_key) AS feature_count
-  FROM events
-  WHERE events.project_key=$1
-  GROUP BY events.project_key`,[projectKey])
-  const featureCount=rows[0].feature_count
-  const limit=Math.floor(featureCount/2)
   const result = await pool.query(
-    `SELECT
+    `WITH project_details AS(
+  SELECT events.project_key,
+  COUNT(DISTINCT events.feature_key) AS feature_count,
+  COUNT(*) AS project_total_interactions
+    FROM events
+  GROUP BY events.project_key
+),
+feature_details AS(
+  SELECT events.project_key,events.feature_key,COUNT(feature_key) as feature_total_interactions
+  FROM events
+  GROUP BY events.feature_key,events.project_key
+),
+feature_monthly_interactions AS(
+SELECT
+    project_key,
+    feature_key,
+    DATE_TRUNC('month', TO_TIMESTAMP(timestamp/1000)) AS month,
+    COUNT(*) AS interactions
+FROM events
+WHERE event_type='click'
+GROUP BY
+    project_key,
+    feature_key,
+    DATE_TRUNC('month', TO_TIMESTAMP(timestamp/1000))
+),
+feature_rank AS (
+    SELECT
+        project_key,
+        feature_key,
+        feature_total_interactions,
+        ROW_NUMBER() OVER(
+            PARTITION BY project_key
+            ORDER BY feature_total_interactions ASC
+        ) AS feature_rank_month
+    FROM feature_details
+)
+SELECT
       events.project_key,
       events.feature_key,
       events.feature_name,
+      TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'Month') AS month,
+      CASE  
+      WHEN EXTRACT(MONTH FROM (TO_TIMESTAMP(events.timestamp/1000))) BETWEEN 1 AND 3 THEN 'Q1'
+      WHEN EXTRACT(MONTH FROM (TO_TIMESTAMP(events.timestamp/1000))) BETWEEN 4 AND 6 THEN 'Q2'
+      WHEN EXTRACT(MONTH FROM (TO_TIMESTAMP(events.timestamp/1000))) BETWEEN 7 AND 9 THEN 'Q3'
+      WHEN EXTRACT(MONTH FROM (TO_TIMESTAMP(events.timestamp/1000))) BETWEEN 10 AND 12 THEN 'Q4'
+      END AS quarter,
+      TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'YYYY') AS year,
+      feature_rank.feature_total_interactions as total_interactions,
+      feature_rank.feature_rank_month,
+      project_details.feature_count,
       projects.project_icon,
-      COUNT(*) AS total_interactions,
+      project_details.project_total_interactions AS project_total_interactions,
       COUNT(DISTINCT events.visitor_id) AS unique_users
     FROM events
     JOIN projects ON events.project_key=projects.project_key
+    JOIN feature_details ON events.feature_key=feature_details.feature_key
+    JOIN feature_rank
+    ON events.feature_key = feature_rank.feature_key
+    AND events.project_key = feature_rank.project_key
+    JOIN project_details ON events.project_key=project_details.project_key
     WHERE event_type='click'
     AND events.project_key=$1
-    GROUP BY events.project_key, events.feature_key, events.feature_name,projects.project_icon
-    ORDER BY events.project_key ASC,total_interactions DESC
-    LIMIT $2`,[projectKey,limit]
+    AND feature_details.feature_total_interactions>1
+    AND feature_rank.feature_rank_month<ROUND((project_details.feature_count/2)+2,0)
+    GROUP BY events.project_key,
+    project_details.project_total_interactions,
+    events.feature_key, events.feature_name,
+    project_details.feature_count,
+    projects.project_icon,
+    DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000)),
+    TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'Month'),
+    TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'YYYY'),
+    feature_details.feature_total_interactions,
+    feature_rank.feature_total_interactions,
+    feature_rank.feature_rank_month,
+    EXTRACT(MONTH FROM (TO_TIMESTAMP(events.timestamp/1000)))
+    ORDER BY events.project_key ASC,DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000)) ASC,feature_details.feature_total_interactions ASC`,[projectKey,limit]
   );
   //console.log(result.rows)
   return result.rows
