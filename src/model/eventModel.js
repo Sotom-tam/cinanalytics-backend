@@ -390,170 +390,156 @@ export async function getProjectFeatureData(){
 
 export async function getLeastUsedFeaturesByProject(projectKey) {
   const result = await pool.query(`
-    WITH project_details AS(
+  WITH project_feature_details as(
   SELECT events.project_key,
-  COUNT(DISTINCT events.feature_key) AS feature_count,
-  COUNT(*) AS project_total_interactions
-    FROM events
+  COUNT( events.feature_key) as project_feature_interactions,
+  COUNT(DISTINCT events.feature_key) as project_feature_count
+  FROM events
   GROUP BY events.project_key
 ),
-feature_details AS(
-  SELECT events.project_key,events.feature_key,COUNT(feature_key) as feature_total_interactions
+feature_details as(
+  SELECT events.project_key,events.feature_key,events.feature_name,
+  TO_CHAR(DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000)),'Month') as month,
+  DATE_TRUNC('month', TO_TIMESTAMP(events.timestamp/1000)) AS month_bucket,
+  COUNT(events.feature_key) as feature_interactions
   FROM events
-  GROUP BY events.feature_key,events.project_key
-),
-feature_monthly_interactions AS(
-SELECT
-    project_key,
-    feature_key,
-    DATE_TRUNC('month', TO_TIMESTAMP(timestamp/1000)) AS month,
-    COUNT(*) AS interactions
-FROM events
-WHERE event_type='click'
-GROUP BY
-    project_key,
-    feature_key,
-    DATE_TRUNC('month', TO_TIMESTAMP(timestamp/1000))
-),
-feature_rank AS (
-    SELECT
-        project_key,
-        feature_key,
-        feature_total_interactions,
-        ROW_NUMBER() OVER(
-            PARTITION BY project_key
-            ORDER BY feature_total_interactions ASC
-        ) AS feature_rank_month
-    FROM feature_details
+  WHERE events.event_type='click'
+  GROUP BY events.project_key,
+  events.feature_key,
+  events.feature_name,
+  DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000))
 )
-SELECT
-      events.project_key,
-      events.feature_key,
-      events.feature_name,
-      TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'Month') AS month,
-      CASE  
-      WHEN EXTRACT(MONTH FROM (TO_TIMESTAMP(events.timestamp/1000))) BETWEEN 1 AND 3 THEN 'Q1'
-      WHEN EXTRACT(MONTH FROM (TO_TIMESTAMP(events.timestamp/1000))) BETWEEN 4 AND 6 THEN 'Q2'
-      WHEN EXTRACT(MONTH FROM (TO_TIMESTAMP(events.timestamp/1000))) BETWEEN 7 AND 9 THEN 'Q3'
-      WHEN EXTRACT(MONTH FROM (TO_TIMESTAMP(events.timestamp/1000))) BETWEEN 10 AND 12 THEN 'Q4'
-      END AS quarter,
-      TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'YYYY') AS year,
-      feature_rank.feature_total_interactions as total_interactions,
-      feature_rank.feature_rank_month,
-      project_details.feature_count,
-      projects.project_icon,
-      project_details.project_total_interactions AS project_total_interactions,
-      COUNT(DISTINCT events.visitor_id) AS unique_users
-    FROM events
-    JOIN projects ON events.project_key=projects.project_key
-    JOIN feature_details ON events.feature_key=feature_details.feature_key
-    JOIN feature_rank
-    ON events.feature_key = feature_rank.feature_key
-    AND events.project_key = feature_rank.project_key
-    JOIN project_details ON events.project_key=project_details.project_key
-    WHERE event_type='click'
-    AND events.project_key=$1
-    AND feature_details.feature_total_interactions>1
-    AND feature_rank.feature_rank_month<ROUND((project_details.feature_count/2)+2,0)
-    GROUP BY events.project_key,
-    project_details.project_total_interactions,
-    events.feature_key, events.feature_name,
-    project_details.feature_count,
-    projects.project_icon,
-    DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000)),
-    TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'Month'),
-    TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'YYYY'),
-    feature_details.feature_total_interactions,
-    feature_rank.feature_total_interactions,
-    feature_rank.feature_rank_month,
-    EXTRACT(MONTH FROM (TO_TIMESTAMP(events.timestamp/1000)))
-    ORDER BY events.project_key ASC,DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000)) ASC,feature_details.feature_total_interactions ASC`,
-    [projectKey]
+SELECT * FROM (
+SELECT feature_details.project_key,
+feature_details.feature_key,
+feature_details.feature_name,
+feature_details.month_bucket,
+TO_CHAR(month_bucket,'FMMonth') AS month_name,
+CASE
+  WHEN EXTRACT(MONTH FROM feature_details.month_bucket) BETWEEN 1 AND 3 THEN 'Q1'
+  WHEN EXTRACT(MONTH FROM feature_details.month_bucket) BETWEEN 4 AND 6 THEN 'Q2'
+  WHEN EXTRACT(MONTH FROM feature_details.month_bucket) BETWEEN 7 AND 9 THEN 'Q3'
+  WHEN EXTRACT(MONTH FROM feature_details.month_bucket) BETWEEN 10 AND 12 THEN 'Q4'
+END AS quarter,
+TO_CHAR(feature_details.month_bucket,'YYYY') as year,
+feature_details.feature_interactions as new_feature_inter,
+
+ROW_NUMBER() OVER (
+  PARTITION BY feature_details.month_bucket
+  ORDER BY feature_details.feature_interactions ASC
+) as feature_rank_month,
+
+COUNT(*) OVER (
+  PARTITION BY feature_details.project_key, feature_details.month_bucket
+) as max_rank,
+
+ -- total interactions per month
+SUM(feature_details.feature_interactions) 
+OVER (PARTITION BY feature_details.project_key, feature_details.month_bucket) 
+AS feature_interactions_month,
+
+ROUND(feature_details.feature_interactions*100/(
+  SUM(feature_details.feature_interactions)
+  OVER (PARTITION BY feature_details.project_key, feature_details.month_bucket)
+  ),
+1) as feature_usage,
+
+project_feature_details.project_feature_interactions,
+project_feature_details.project_feature_count as project_feature_count
+FROM feature_details
+JOIN project_feature_details ON project_feature_details.project_key=feature_details.project_key
+WHERE feature_details.feature_interactions>1
+AND feature_details.project_key=$1
+
+GROUP BY feature_details.project_key,
+feature_details.feature_key,
+feature_details.feature_name,
+feature_details.feature_interactions,
+project_feature_details.project_feature_count,
+project_feature_details.project_feature_interactions,
+feature_details.month_bucket
+) as ranked_features
+WHERE ranked_features.feature_rank_month <=CEIL(max_rank/2.0)
+ORDER BY ranked_features.project_key ASC,ranked_features.month_bucket ASC,ranked_features.feature_rank_month ASC`,
+  [projectKey]
   );
-  //console.log(result.rows)
+  //console.log(result.rows,result.rows.length)
   return result.rows
 }
-
+//getLeastUsedFeaturesByProject('proj_0e1eaec4fe1f20e9')
 export async function getMostUsedFeaturesByProject(projectKey) {
-  const result = await pool.query(
-    `WITH project_details AS(
+  const result = await pool.query(`
+  WITH project_feature_details as(
   SELECT events.project_key,
-  COUNT(DISTINCT events.feature_key) AS feature_count,
-  COUNT(*) AS project_total_interactions
-    FROM events
+  COUNT( events.feature_key) as project_feature_interactions,
+  COUNT(DISTINCT events.feature_key) as project_feature_count
+  FROM events
   GROUP BY events.project_key
 ),
-feature_details AS(
-  SELECT events.project_key,events.feature_key,COUNT(feature_key) as feature_total_interactions
+feature_details as(
+  SELECT events.project_key,events.feature_key,events.feature_name,
+  TO_CHAR(DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000)),'Month') as month,
+  DATE_TRUNC('month', TO_TIMESTAMP(events.timestamp/1000)) AS month_bucket,
+  COUNT(events.feature_key) as feature_interactions
   FROM events
-  GROUP BY events.feature_key,events.project_key
-),
-feature_monthly_interactions AS(
-SELECT
-    project_key,
-    feature_key,
-    DATE_TRUNC('month', TO_TIMESTAMP(timestamp/1000)) AS month,
-    COUNT(*) AS interactions
-FROM events
-WHERE event_type='click'
-GROUP BY
-    project_key,
-    feature_key,
-    DATE_TRUNC('month', TO_TIMESTAMP(timestamp/1000))
-),
-feature_rank AS (
-    SELECT
-        project_key,
-        feature_key,
-        feature_total_interactions,
-        ROW_NUMBER() OVER(
-            PARTITION BY project_key
-            ORDER BY feature_total_interactions ASC
-        ) AS feature_rank_month
-    FROM feature_details
+  WHERE events.event_type='click'
+  GROUP BY events.project_key,
+  events.feature_key,
+  events.feature_name,
+  DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000))
 )
-SELECT
-      events.project_key,
-      events.feature_key,
-      events.feature_name,
-      TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'Month') AS month,
-      CASE  
-      WHEN EXTRACT(MONTH FROM (TO_TIMESTAMP(events.timestamp/1000))) BETWEEN 1 AND 3 THEN 'Q1'
-      WHEN EXTRACT(MONTH FROM (TO_TIMESTAMP(events.timestamp/1000))) BETWEEN 4 AND 6 THEN 'Q2'
-      WHEN EXTRACT(MONTH FROM (TO_TIMESTAMP(events.timestamp/1000))) BETWEEN 7 AND 9 THEN 'Q3'
-      WHEN EXTRACT(MONTH FROM (TO_TIMESTAMP(events.timestamp/1000))) BETWEEN 10 AND 12 THEN 'Q4'
-      END AS quarter,
-      TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'YYYY') AS year,
-      feature_rank.feature_total_interactions as total_interactions,
-      feature_rank.feature_rank_month,
-      project_details.feature_count,
-      projects.project_icon,
-      project_details.project_total_interactions AS project_total_interactions,
-      COUNT(DISTINCT events.visitor_id) AS unique_users
-    FROM events
-    JOIN projects ON events.project_key=projects.project_key
-    JOIN feature_details ON events.feature_key=feature_details.feature_key
-    JOIN feature_rank
-    ON events.feature_key = feature_rank.feature_key
-    AND events.project_key = feature_rank.project_key
-    JOIN project_details ON events.project_key=project_details.project_key
-    WHERE event_type='click'
-    AND events.project_key=$1
-    AND feature_details.feature_total_interactions>1
-    AND feature_rank.feature_rank_month<ROUND((project_details.feature_count/2)+2,0)
-    GROUP BY events.project_key,
-    project_details.project_total_interactions,
-    events.feature_key, events.feature_name,
-    project_details.feature_count,
-    projects.project_icon,
-    DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000)),
-    TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'Month'),
-    TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'YYYY'),
-    feature_details.feature_total_interactions,
-    feature_rank.feature_total_interactions,
-    feature_rank.feature_rank_month,
-    EXTRACT(MONTH FROM (TO_TIMESTAMP(events.timestamp/1000)))
-    ORDER BY events.project_key ASC,DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000)) ASC,feature_details.feature_total_interactions ASC`,[projectKey,limit]
+SELECT * FROM (
+SELECT feature_details.project_key,
+feature_details.feature_key,
+feature_details.feature_name,
+feature_details.month_bucket,
+TO_CHAR(month_bucket,'FMMonth') AS month_name,
+CASE
+  WHEN EXTRACT(MONTH FROM feature_details.month_bucket) BETWEEN 1 AND 3 THEN 'Q1'
+  WHEN EXTRACT(MONTH FROM feature_details.month_bucket) BETWEEN 4 AND 6 THEN 'Q2'
+  WHEN EXTRACT(MONTH FROM feature_details.month_bucket) BETWEEN 7 AND 9 THEN 'Q3'
+  WHEN EXTRACT(MONTH FROM feature_details.month_bucket) BETWEEN 10 AND 12 THEN 'Q4'
+END AS quarter,
+TO_CHAR(feature_details.month_bucket,'YYYY') as year,
+feature_details.feature_interactions as new_feature_inter,
+
+ROW_NUMBER() OVER (
+  PARTITION BY feature_details.month_bucket
+  ORDER BY feature_details.feature_interactions ASC
+) as feature_rank_month,
+
+COUNT(*) OVER (
+  PARTITION BY feature_details.project_key, feature_details.month_bucket
+) as max_rank,
+
+ -- total interactions per month
+SUM(feature_details.feature_interactions) 
+OVER (PARTITION BY feature_details.project_key, feature_details.month_bucket) 
+AS feature_interactions_month,
+
+ROUND(feature_details.feature_interactions*100/(
+  SUM(feature_details.feature_interactions)
+  OVER (PARTITION BY feature_details.project_key, feature_details.month_bucket)
+  ),
+1) as feature_usage,
+
+project_feature_details.project_feature_interactions,
+project_feature_details.project_feature_count as project_feature_count
+FROM feature_details
+JOIN project_feature_details ON project_feature_details.project_key=feature_details.project_key
+WHERE feature_details.feature_interactions>1
+AND feature_details.project_key='proj_028268c1abf9ec55'
+
+GROUP BY feature_details.project_key,
+feature_details.feature_key,
+feature_details.feature_name,
+feature_details.feature_interactions,
+project_feature_details.project_feature_count,
+project_feature_details.project_feature_interactions,
+feature_details.month_bucket
+) as ranked_features
+WHERE ranked_features.feature_rank_month >CEIL(max_rank/2.0)
+ORDER BY ranked_features.project_key ASC,ranked_features.month_bucket ASC,ranked_features.feature_rank_month DESC`,[projectKey]
   );
   //console.log(result.rows)
   return result.rows
