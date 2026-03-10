@@ -401,7 +401,8 @@ feature_details as(
   SELECT events.project_key,events.feature_key,events.feature_name,
   TO_CHAR(DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000)),'Month') as month,
   DATE_TRUNC('month', TO_TIMESTAMP(events.timestamp/1000)) AS month_bucket,
-  COUNT(events.feature_key) as feature_interactions
+  COUNT(events.feature_key) as feature_interactions,
+  COUNT(DISTINCT events.visitor_id) as unique_users
   FROM events
   WHERE events.event_type='click'
   GROUP BY events.project_key,
@@ -422,7 +423,8 @@ CASE
   WHEN EXTRACT(MONTH FROM feature_details.month_bucket) BETWEEN 10 AND 12 THEN 'Q4'
 END AS quarter,
 TO_CHAR(feature_details.month_bucket,'YYYY') as year,
-feature_details.feature_interactions as new_feature_inter,
+feature_details.feature_interactions as total_interactions,
+feature_details.unique_users,
 
 ROW_NUMBER() OVER (
   PARTITION BY feature_details.month_bucket
@@ -480,7 +482,8 @@ feature_details as(
   SELECT events.project_key,events.feature_key,events.feature_name,
   TO_CHAR(DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000)),'Month') as month,
   DATE_TRUNC('month', TO_TIMESTAMP(events.timestamp/1000)) AS month_bucket,
-  COUNT(events.feature_key) as feature_interactions
+  COUNT(events.feature_key) as feature_interactions,
+  COUNT(DISTINCT events.visitor_id) as unique_users
   FROM events
   WHERE events.event_type='click'
   GROUP BY events.project_key,
@@ -501,8 +504,8 @@ CASE
   WHEN EXTRACT(MONTH FROM feature_details.month_bucket) BETWEEN 10 AND 12 THEN 'Q4'
 END AS quarter,
 TO_CHAR(feature_details.month_bucket,'YYYY') as year,
-feature_details.feature_interactions as new_feature_inter,
-
+feature_details.feature_interactions as total_interactions,
+feature_details.unique_users,
 ROW_NUMBER() OVER (
   PARTITION BY feature_details.month_bucket
   ORDER BY feature_details.feature_interactions ASC
