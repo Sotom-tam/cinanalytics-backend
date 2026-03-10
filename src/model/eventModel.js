@@ -344,6 +344,7 @@ ORDER BY COALESCE(tw.interactions_this_week, 0) DESC;`)
   //console.log(result.rows)
   return result.rows
 }
+getProjectSummaryData()
 
 export async function getProjectFeatureData(){
   const result = await pool.query(`
