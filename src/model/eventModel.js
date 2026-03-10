@@ -191,7 +191,7 @@ export async function getTop3PerformingProjects() {
     DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000)),TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'Month'),
     DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000)),TO_CHAR(TO_TIMESTAMP(events.timestamp/1000),'YYYY')
     ORDER BY MIN(DATE_TRUNC('month',TO_TIMESTAMP(events.timestamp/1000))) DESC,events.project_key ASC`)
-  console.log(result.rows)
+  //console.log(result.rows)
   return result.rows
 }
 
@@ -344,9 +344,10 @@ ORDER BY COALESCE(tw.interactions_this_week, 0) DESC;`)
   //console.log(result.rows)
   return result.rows
 }
-getProjectSummaryData()
+//getProjectSummaryData()
 
 export async function getProjectFeatureData(){
+  const cutoff = Date.now() - (7 * 24 * 60 * 60 * 1000);
   const result = await pool.query(`
       WITH feature_usage AS (
     SELECT
@@ -365,7 +366,7 @@ export async function getProjectFeatureData(){
     FROM events
     JOIN projects ON events.project_key = projects.project_key
     WHERE 
-      events.timestamp >= 1649876543210  -- Your timestamp cutoff
+      events.timestamp >= $1
       AND events.feature_key IS NOT NULL
     GROUP BY 
       events.project_key, 
@@ -383,7 +384,7 @@ export async function getProjectFeatureData(){
     COUNT(CASE WHEN feature_status = 'unused' THEN 1 END) AS unused_features  
   FROM feature_usage
   GROUP BY project_key, project_name
-  ORDER BY active_features DESC;`)
+  ORDER BY active_features DESC;`,[cutoff])
   //console.log(result.rows)
   return result.rows
 }
@@ -533,7 +534,7 @@ project_feature_details.project_feature_count as project_feature_count
 FROM feature_details
 JOIN project_feature_details ON project_feature_details.project_key=feature_details.project_key
 WHERE feature_details.feature_interactions>1
-AND feature_details.project_key='proj_028268c1abf9ec55'
+AND feature_details.project_key=$1
 
 GROUP BY feature_details.project_key,
 feature_details.feature_key,
@@ -545,8 +546,7 @@ project_feature_details.project_feature_interactions,
 feature_details.month_bucket
 ) as ranked_features
 WHERE ranked_features.feature_rank_month >CEIL(max_rank/2.0)
-ORDER BY ranked_features.project_key ASC,ranked_features.month_bucket ASC,ranked_features.feature_rank_month DESC`,[projectKey]
-  );
+ORDER BY ranked_features.project_key ASC,ranked_features.month_bucket ASC,ranked_features.feature_rank_month DESC`,[projectKey]);
   //console.log(result.rows)
   return result.rows
 }
