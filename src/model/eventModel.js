@@ -565,27 +565,95 @@ ORDER BY ranked_features.project_key ASC,ranked_features.month_bucket ASC,ranked
 }
 
 export async function getLeastVisitedPagesByProject(projectKey) {
-  const {rows}=await pool.query(`SELECT COUNT(DISTINCT events.page_name) AS page_count
-  FROM events
-  WHERE events.project_key=$1
-  GROUP BY events.project_key`,[projectKey])
-  const pageCount=rows[0].page_count
-  const limit=Math.floor(pageCount/2)
   const result = await pool.query(
-    `SELECT
-      events.project_key,
-      events.page_name,
-      projects.project_icon,
-      COUNT(*) AS total_interactions,
-      COUNT(DISTINCT events.visitor_id) AS unique_users
-    FROM events
-    JOIN projects ON events.project_key=projects.project_key
-    WHERE event_type = 'pageview'
-      AND events.project_key=$1
-    GROUP BY events.project_key,events.page_name,projects.project_icon
-    ORDER BY events.project_key, total_interactions ASC
-    LIMIT $2;`,
-    [projectKey,limit]
+    `WITH pageviews AS (
+  SELECT
+    project_key,
+    visitor_id,
+    page_name,
+    timestamp,
+    DATE_TRUNC('month', TO_TIMESTAMP(timestamp/1000)) AS month_bucket
+  FROM events
+  WHERE event_type = 'pageview'
+),
+
+ordered_pageviews AS (
+  SELECT
+    *,
+    LEAD(timestamp) OVER (
+      PARTITION BY visitor_id
+      ORDER BY timestamp
+    ) AS next_timestamp
+  FROM pageviews
+),
+
+page_times AS (
+  SELECT
+    project_key,
+    page_name,
+    month_bucket,
+    (next_timestamp - timestamp)/1000.0 AS time_on_page_seconds
+  FROM ordered_pageviews
+  WHERE next_timestamp IS NOT NULL
+    AND (next_timestamp - timestamp) <= 30 * 60 * 1000
+),
+
+page_interactions AS (
+  SELECT
+    project_key,
+    page_name,
+    month_bucket,
+    COUNT(*) AS page_interactions,
+    COUNT(DISTINCT visitor_id) AS unique_users
+  FROM pageviews
+  GROUP BY project_key, page_name, month_bucket
+),
+
+ranked_pages AS (
+  SELECT
+    page_interactions.project_key,
+    page_interactions.page_name,
+    page_interactions.month_bucket,
+    page_interactions.page_interactions,
+    page_interactions.unique_users,
+    COALESCE(ROUND(AVG(page_times.time_on_page_seconds),2),0) AS avg_seconds_on_page,
+    RANK() OVER (
+      PARTITION BY page_interactions.project_key, page_interactions.month_bucket
+      ORDER BY page_interactions.page_interactions DESC
+    ) AS page_rank
+  FROM page_interactions
+  LEFT JOIN page_times
+    ON page_interactions.project_key = page_times.project_key
+    AND page_interactions.page_name = page_times.page_name
+    AND page_interactions.month_bucket = page_times.month_bucket
+  GROUP BY
+    page_interactions.project_key,
+    page_interactions.page_name,
+    page_interactions.month_bucket,
+    page_interactions.page_interactions,
+    page_interactions.unique_users
+)
+
+SELECT
+  ranked_pages.project_key,
+  ranked_pages.page_name,
+  TO_CHAR(ranked_pages.month_bucket,'Month') AS month_name,
+  TO_CHAR(ranked_pages.month_bucket,'YYYY') AS year,
+  CASE
+  WHEN EXTRACT(MONTH FROM ranked_pages.month_bucket) BETWEEN 1 AND 3 THEN 'Q1'
+  WHEN EXTRACT(MONTH FROM ranked_pages.month_bucket) BETWEEN 4 AND 6 THEN 'Q2'
+  WHEN EXTRACT(MONTH FROM ranked_pages.month_bucket) BETWEEN 7 AND 9 THEN 'Q3'
+  WHEN EXTRACT(MONTH FROM ranked_pages.month_bucket) BETWEEN 10 AND 12 THEN 'Q4'
+END AS quarter,
+  ranked_pages.avg_seconds_on_page,
+  ranked_pages.page_interactions AS pages_visits,
+  ranked_pages.unique_users,
+  ranked_pages.page_rank
+FROM ranked_pages
+WHERE ranked_pages.page_rank < 2   -- only top pages per project/month
+AND project_key=$1
+ORDER BY ranked_pages.project_key, ranked_pages.month_bucket;`,
+    [projectKey]
   );
   //console.log("pages:",result.rows)
   return result.rows
@@ -594,27 +662,90 @@ export async function getLeastVisitedPagesByProject(projectKey) {
 getMostVisitedPagesByProject('proj_16abddba0d405800')
 
 export async function getMostVisitedPagesByProject(projectKey) {
-  const {rows}=await pool.query(`SELECT COUNT(DISTINCT events.page_name) AS page_count
-  FROM events
-  WHERE events.project_key=$1
-  GROUP BY events.project_key`,[projectKey])
-  const pageCount=rows[0].page_count
-  const limit=Math.floor(pageCount/2)
   const result = await pool.query(
-    `SELECT
-      events.project_key,
-      events.page_name,
-      projects.project_icon,
-      COUNT(*) AS total_interactions,
-      COUNT(DISTINCT events.visitor_id) AS unique_users
-    FROM events
-    JOIN projects ON events.project_key=projects.project_key
-    WHERE event_type = 'pageview'
-      AND events.project_key=$1
-    GROUP BY events.project_key,events.page_name,projects.project_icon
-    ORDER BY events.project_key, total_interactions ASC
-    LIMIT $2;`,
-    [projectKey,limit]
+    `WITH pageviews AS (
+  SELECT
+    project_key,
+    visitor_id,
+    page_name,
+    timestamp,
+    DATE_TRUNC('month', TO_TIMESTAMP(timestamp/1000)) AS month_bucket
+  FROM events
+  WHERE event_type = 'pageview'
+),
+ordered_pageviews AS (
+  SELECT
+    *,
+    LEAD(timestamp) OVER (
+      PARTITION BY visitor_id
+      ORDER BY timestamp
+    ) AS next_timestamp
+  FROM pageviews
+),
+page_times AS (
+  SELECT
+    project_key,
+    page_name,
+    month_bucket,
+    (next_timestamp - timestamp)/1000.0 AS time_on_page_seconds
+  FROM ordered_pageviews
+  WHERE next_timestamp IS NOT NULL
+    AND (next_timestamp - timestamp) <= 30 * 60 * 1000
+),
+page_interactions AS (
+  SELECT
+    project_key,
+    page_name,
+    month_bucket,
+    COUNT(*) AS page_interactions,
+    COUNT(DISTINCT visitor_id) AS unique_users
+  FROM pageviews
+  GROUP BY project_key, page_name, month_bucket
+),
+ranked_pages AS (
+  SELECT
+    page_interactions.project_key,
+    page_interactions.page_name,
+    page_interactions.month_bucket,
+    page_interactions.page_interactions,
+    page_interactions.unique_users,
+    COALESCE(ROUND(AVG(page_times.time_on_page_seconds),2),0) AS avg_seconds_on_page,
+    RANK() OVER (
+      PARTITION BY page_interactions.project_key, page_interactions.month_bucket
+      ORDER BY page_interactions.page_interactions DESC
+    ) AS page_rank
+  FROM page_interactions
+  LEFT JOIN page_times
+    ON page_interactions.project_key = page_times.project_key
+    AND page_interactions.page_name = page_times.page_name
+    AND page_interactions.month_bucket = page_times.month_bucket
+  GROUP BY
+    page_interactions.project_key,
+    page_interactions.page_name,
+    page_interactions.month_bucket,
+    page_interactions.page_interactions,
+    page_interactions.unique_users
+)
+SELECT
+  ranked_pages.project_key,
+  ranked_pages.page_name,
+  TO_CHAR(ranked_pages.month_bucket,'Month') AS month_name,
+  TO_CHAR(ranked_pages.month_bucket,'YYYY') AS year,
+  CASE
+  WHEN EXTRACT(MONTH FROM ranked_pages.month_bucket) BETWEEN 1 AND 3 THEN 'Q1'
+  WHEN EXTRACT(MONTH FROM ranked_pages.month_bucket) BETWEEN 4 AND 6 THEN 'Q2'
+  WHEN EXTRACT(MONTH FROM ranked_pages.month_bucket) BETWEEN 7 AND 9 THEN 'Q3'
+  WHEN EXTRACT(MONTH FROM ranked_pages.month_bucket) BETWEEN 10 AND 12 THEN 'Q4'
+END AS quarter,
+  ranked_pages.avg_seconds_on_page,
+  ranked_pages.page_interactions AS pages_visits,
+  ranked_pages.unique_users,
+  ranked_pages.page_rank
+FROM ranked_pages
+WHERE ranked_pages.page_rank >1   -- only top pages per project/month
+AND project_key=$1
+ORDER BY ranked_pages.project_key, ranked_pages.month_bucket;`,
+    [projectKey]
   );
   //console.log("pages:",result.rows)
   return result.rows
