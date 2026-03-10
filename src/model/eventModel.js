@@ -198,22 +198,20 @@ export async function getTop3PerformingProjects() {
 
 
 export async function getProjectSummaryData(){
-  const result=await pool.query(`WITH 
-  date_ranges AS (
-    SELECT 
-      -- This week (last 7 days)
-      EXTRACT(epoch FROM NOW() - INTERVAL '7 days') * 1000 AS this_week_start,
-      EXTRACT(epoch FROM NOW()) * 1000 AS this_week_end,
-      -- Last week (previous 7 days)
-      EXTRACT(epoch FROM NOW() - INTERVAL '14 days') * 1000 AS last_week_start,
-      EXTRACT(epoch FROM NOW() - INTERVAL '7 days') * 1000 AS last_week_end
+  const result=await pool.query(`
+  WITH date_ranges AS (
+  SELECT 
+    -- This week (last 7 days)
+    EXTRACT(epoch FROM NOW() - INTERVAL '7 days') * 1000 AS this_week_start,
+    EXTRACT(epoch FROM NOW()) * 1000 AS this_week_end,
+    -- Last week (previous 7 days)
+    EXTRACT(epoch FROM NOW() - INTERVAL '14 days') * 1000 AS last_week_start,
+    EXTRACT(epoch FROM NOW() - INTERVAL '7 days') * 1000 AS last_week_end
   ),
-  
   -- Overall total (for percentage calculation)
   overall_total AS (
     SELECT COUNT(*) AS all_projects_total FROM events
   ),
-  
   -- This week's data
   this_week_events AS (
     SELECT 
@@ -322,17 +320,32 @@ SELECT
   projects.project_icon,
   -- This week stats
   COALESCE(tw.interactions_this_week, 0) AS project_interactions_this_week,
+  COALESCE(lw.interactions_last_week, 0) AS project_interactions_last_week,
   CASE 
     WHEN COALESCE(lw.interactions_last_week, 0) > 0 
-    THEN ROUND(((COALESCE(tw.interactions_this_week, 0) - lw.interactions_last_week)::NUMERIC / lw.interactions_last_week * 100),1)
+    THEN ROUND(
+      (
+        (COALESCE(tw.interactions_this_week, 0) - lw.interactions_last_week)::NUMERIC
+        / lw.interactions_last_week)* 100
+      ,1)
     ELSE 0
   END AS project_interactions_change_percent,
 
   COALESCE(tw.active_users_this_week, 0) AS active_users_this_week,
-  ROUND(COALESCE(tw.active_users_this_week, 0)-COALESCE(lw.active_users_last_week, 0)) AS active_users_difference,
+  COALESCE(lw.active_users_last_week, 0) AS active_users_last_week,
 
   COALESCE(tw.avg_session_time_this_week, 0) AS avg_session_time_this_week,
-  ROUND(COALESCE(tw.avg_session_time_this_week, 0)-COALESCE(lw.avg_session_time_last_week, 0),1) AS avg_session_time_difference
+  COALESCE(lw.avg_session_time_last_week, 0) AS avg_session_time_last_week,
+  CASE
+  WHEN COALESCE(lw.avg_session_time_last_week, 0) > 0
+  THEN ROUND(
+    (
+      (COALESCE(tw.avg_session_time_this_week, 0) - lw.avg_session_time_last_week)::NUMERIC
+      / lw.avg_session_time_last_week
+    ) * 100
+  ,1)
+  ELSE 0
+END AS avg_session_time_change_percent
 FROM projects
 LEFT JOIN this_week_project_stats tw ON projects.project_key = tw.project_key
 LEFT JOIN last_week_project_stats lw ON projects.project_key = lw.project_key
