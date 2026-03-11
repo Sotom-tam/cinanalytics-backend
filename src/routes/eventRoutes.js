@@ -6,7 +6,6 @@ const router=Router()
 router.post("/",storeEvent)
 router.get("/",fetchFeatureData)
 router.get("/dashboard-data",fetchDashboard)
-router.get("/dashboard-insights",fetchDashboardInisights)
 router.post("/project-data",fetchProjectData)
 router.post("/project-insights",fetchProjectInsights)
 

@@ -1,7 +1,7 @@
 import { insertEvent,getProjectByProjectKey } from "../model/eventModel.js"
 
 import {deduplicationService} from "../services/eventServices.js"
-import {getFeatureData,getDashBoardDataAcrossProject,getDashBoardKeyInsights,getProjectData,getProjectInsights} from "../services/eventServices.js"
+import {getFeatureData,getDashBoardDataAcrossProject,getDashBoardKeyInsights,getProjectData,getProjectInsightsData} from "../services/eventServices.js"
 
 
 //deduplication middleware to prevent storing duplicate and clicks that are tied to page views
@@ -82,7 +82,7 @@ export async function fetchProjectInsights(req,res){
         const project=await getProjectByProjectKey(projectKey)
         //console.log('Project Found:',project)
         if(project){
-            const projectInsights=await getProjectInsights(projectKey)
+            const projectInsights=await getProjectInsightsData(projectKey)
             //console.log("Project Data:",projectInsights)
             return res.status(200).json({projectInsights:projectInsights,success:true})
         }else{

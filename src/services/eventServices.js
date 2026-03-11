@@ -69,7 +69,8 @@ export async function getProjectData(projectKey){
         leastVisitedPages:leastVisitedPages,
     }
 }
-export async function getProjectInsights(projectKey){
+
+export async function getProjectInsightsData(projectKey){
     const allProjectData= await getProjectSummaryData()
     const projectData= allProjectData.find((project)=>{
         return project.project_key===projectKey
