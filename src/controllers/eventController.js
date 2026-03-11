@@ -1,4 +1,5 @@
 import { insertEvent,getProjectByProjectKey } from "../model/eventModel.js"
+
 import {deduplicationService} from "../services/eventServices.js"
 import {getFeatureData,getDashBoardDataAcrossProject,getProjectData} from "../services/eventServices.js"
 
@@ -18,9 +19,14 @@ export async function deduplicationControlller(req,res,next) {
 }
 export async function fetchDashboard(req,res){
     try {
-        const {summaryData,leastUsedFeatures,chartData}=await getDashBoardDataAcrossProject()
-        console.log(summaryData,leastUsedFeatures)
-        return res.status(200).json({summaryData:summaryData,leastUsedFeatures:leastUsedFeatures,chartData:chartData})        
+        const {summaryData,leastUsedFeatures,chartData,keyInsights}=await getDashBoardDataAcrossProject()
+        //console.log(summaryData,leastUsedFeatures)
+        return res.status(200).json({
+            summaryData:summaryData,
+            leastUsedFeatures:leastUsedFeatures,
+            chartData:chartData,
+            keyInsights:keyInsights,
+        })        
     } catch (error) {
         console.log("Error:",error)
         res.status(500).json({error:error})
@@ -34,10 +40,11 @@ export async function fetchProjectData(req,res){
        //console.log(projectKey)
     if(projectKey){
         const project=await getProjectByProjectKey(projectKey)
-        console.log('Project Found:',project)
+        //console.log('Project Found:',project)
         if(project){
             const projectData=await getProjectData(projectKey)
-            console.log("Project Data:",projectData)
+            //console.log("Project Data:",projectData)
+
             return res.status(200).json({projectData,success:true})
         }else{
             return res.status(400).json({message:"Project not saved on Cinalytics",success:false})

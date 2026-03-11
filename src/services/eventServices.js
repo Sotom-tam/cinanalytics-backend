@@ -1,7 +1,7 @@
 import {getProjectSummaryData,getProjectFeatureData,getSummaryStats,getTop3PerformingProjects,getProjectByProjectKey,getLeastUsedFeatures,getAllFeatures} from "../model/eventModel.js"
 import {getDuplicateEvents,getClicksAfterPageView,deleteEventById} from "../model/eventModel.js"
 import {getLeastUsedFeaturesByProject,getMostUsedFeaturesByProject,getLeastVisitedPagesByProject,getMostVisitedPagesByProject} from "../model/eventModel.js"
-
+import {getProjectInsights,getKeyInsightProjectOverview} from "../config/inisights.js"
 export async function getFeatureData() {
     const data=await getAllFeatures()
     return data
@@ -16,8 +16,18 @@ export async function getFeatureDataByProjectKey() {
 export async function getDashBoardDataAcrossProject(){
     const summaryData=await getSummaryStats()
     const leastUsedFeatures=await getLeastUsedFeatures()
-    const projectPeformnaceData=await getTop3PerformingProjects()
-    return{summaryData:summaryData,leastUsedFeatures:leastUsedFeatures,chartData:projectPeformnaceData}
+    const projectPeformanceData=await getTop3PerformingProjects()
+    const keyInsights=await getKeyInsightProjectOverview({
+        summaryData:summaryData,
+        leastUsedFeatures:leastUsedFeatures,
+        chartData:projectPeformanceData,
+    })
+    return{
+        summaryData:summaryData,
+        leastUsedFeatures:leastUsedFeatures,
+        chartData:projectPeformanceData,
+        keyInsights:keyInsights,
+    }
 }
 
 export async function getProjectData(projectKey){
@@ -34,6 +44,16 @@ export async function getProjectData(projectKey){
     const leastUsedFeatures=await getLeastUsedFeaturesByProject(projectKey)
     const mostVisitedPages=await getMostVisitedPagesByProject(projectKey)
     const leastVisitedPages=await getLeastVisitedPagesByProject(projectKey)
+    const keyInsights=await getProjectInsights({
+        projectData:projectData,
+        projectOverview:projectOverview,
+        projectFeature:projectFeature,
+        mostUsedFeatures: mostUsedFeatures,
+        leastUsedFeatures:leastUsedFeatures,
+        mostVisitedPages:mostVisitedPages,
+        leastVisitedPages:leastVisitedPages,
+    })
+    console.log(keyInsights)
     // console.log("Project Overview:",projectOverview,"\n",
     //      "Project Data:",projectData,"\n",
     //    "Most Used Features:", mostUsedFeatures,"\n",
@@ -49,6 +69,7 @@ export async function getProjectData(projectKey){
         leastUsedFeatures:leastUsedFeatures,
         mostVisitedPages:mostVisitedPages,
         leastVisitedPages:leastVisitedPages,
+        keyInsights:keyInsights
     }
 }
 

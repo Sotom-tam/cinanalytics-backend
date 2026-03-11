@@ -3,7 +3,7 @@ import pool from "../db.js"
 
 export async  function getProjectByProjectKey(projectKey){
   const result =await pool.query(`SELECT * FROM projects WHERE project_key=$1`,[projectKey])
-  console.log(result.rows)
+  //console.log(result.rows)
   return result.rows[0]
 }
 
@@ -24,7 +24,7 @@ export async function getSummaryStats() {
     CROSS JOIN connected_projects
     GROUP BY connected_projects.connected_projects_count
     `,[cutoff]);
-  console.log("Model Row:",rows)
+  //console.log("Model Row:",rows)
   return rows[0];
 }
 
@@ -750,7 +750,6 @@ page_interactions AS (
   GROUP BY project_key, page_name, month_bucket
 ),
 
-/* NEW: total interactions per project per month */
 project_month_totals AS (
   SELECT
     project_key,
@@ -773,7 +772,7 @@ ranked_pages AS (
       (page_interactions.page_interactions * 100.0) /
       project_month_totals.total_project_interactions_month,
       2
-    ) AS feature_usage_percent,
+    ) AS page_usage_percent,
 
     COALESCE(ROUND(AVG(page_times.time_on_page_seconds),2),0) AS avg_seconds_on_page,
 
@@ -825,12 +824,8 @@ SELECT
   avg_seconds_on_page,
   page_interactions AS page_visits,
   page_rank,
-  max_rank,
-  ROUND(max_rank/2) AS max_rank_round,
-  CEIL(max_rank/2) AS max_rank_CEIL,
-  CEILING(max_rank/2) AS max_rank_CEILING,
   total_project_interactions_month,
-  feature_usage_percent,
+  page_usage_percent,
   unique_users
 
 FROM ranked_pages_with_max

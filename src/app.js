@@ -12,6 +12,7 @@ import eventRoutes from "./routes/eventRoutes.js"
 import productRoutes from "./routes/projectRoutes.js"
 import {getAllProjectUrl} from "./model/projectModel.js"
 
+
 const app=express()
 app.set("trust proxy", 1);
 
@@ -52,6 +53,7 @@ app.use(passport.session())
 app.use("/api/auth",authRoutes)
 app.use("/api/events",eventRoutes)
 app.use("/api/project",productRoutes)
+
 
 const port=process.env.PORT || 4000;
 
