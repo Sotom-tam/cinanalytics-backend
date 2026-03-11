@@ -17,20 +17,59 @@ export async function getDashBoardDataAcrossProject(){
     const summaryData=await getSummaryStats()
     const leastUsedFeatures=await getLeastUsedFeatures()
     const projectPeformanceData=await getTop3PerformingProjects()
+    return{
+        summaryData:summaryData,
+        leastUsedFeatures:leastUsedFeatures,
+        chartData:projectPeformanceData,
+    }
+}
+
+export async function getDashBoardKeyInsights(){
+    const summaryData=await getSummaryStats()
+    const leastUsedFeatures=await getLeastUsedFeatures()
+    const projectPeformanceData=await getTop3PerformingProjects()
     const keyInsights=await getKeyInsightProjectOverview({
         summaryData:summaryData,
         leastUsedFeatures:leastUsedFeatures,
         chartData:projectPeformanceData,
     })
     return{
-        summaryData:summaryData,
-        leastUsedFeatures:leastUsedFeatures,
-        chartData:projectPeformanceData,
         keyInsights:keyInsights,
     }
 }
 
 export async function getProjectData(projectKey){
+    const allProjectData= await getProjectSummaryData()
+    const projectData= allProjectData.find((project)=>{
+        return project.project_key===projectKey
+    })
+    const allfeatures= await getProjectFeatureData()
+    const projectFeature= allfeatures.find((project)=>{
+        return project.project_key===projectKey
+    })
+    const projectOverview=await getProjectByProjectKey(projectKey)
+    const mostUsedFeatures=await getMostUsedFeaturesByProject(projectKey)
+    const leastUsedFeatures=await getLeastUsedFeaturesByProject(projectKey)
+    const mostVisitedPages=await getMostVisitedPagesByProject(projectKey)
+    const leastVisitedPages=await getLeastVisitedPagesByProject(projectKey)
+    // console.log("Project Overview:",projectOverview,"\n",
+    //      "Project Data:",projectData,"\n",
+    //    "Most Used Features:", mostUsedFeatures,"\n",
+    //    "Least Used Features:",leastUsedFeatures,"\n",
+    //    "Most Visited Pages:",mostVisitedPages,"\n",
+    //    "Least Visited Pages:",leastVisitedPages
+    // )
+    return {
+        projectData:projectData,
+        projectOverview:projectOverview,
+        projectFeature:projectFeature,
+        mostUsedFeatures: mostUsedFeatures,
+        leastUsedFeatures:leastUsedFeatures,
+        mostVisitedPages:mostVisitedPages,
+        leastVisitedPages:leastVisitedPages,
+    }
+}
+export async function getProjectInsights(projectKey){
     const allProjectData= await getProjectSummaryData()
     const projectData= allProjectData.find((project)=>{
         return project.project_key===projectKey
@@ -53,7 +92,7 @@ export async function getProjectData(projectKey){
         mostVisitedPages:mostVisitedPages,
         leastVisitedPages:leastVisitedPages,
     })
-    console.log(keyInsights)
+    //console.log(keyInsights)
     // console.log("Project Overview:",projectOverview,"\n",
     //      "Project Data:",projectData,"\n",
     //    "Most Used Features:", mostUsedFeatures,"\n",
@@ -62,13 +101,6 @@ export async function getProjectData(projectKey){
     //    "Least Visited Pages:",leastVisitedPages
     // )
     return {
-        projectData:projectData,
-        projectOverview:projectOverview,
-        projectFeature:projectFeature,
-        mostUsedFeatures: mostUsedFeatures,
-        leastUsedFeatures:leastUsedFeatures,
-        mostVisitedPages:mostVisitedPages,
-        leastVisitedPages:leastVisitedPages,
         keyInsights:keyInsights
     }
 }

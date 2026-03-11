@@ -1,7 +1,7 @@
 import { insertEvent,getProjectByProjectKey } from "../model/eventModel.js"
 
 import {deduplicationService} from "../services/eventServices.js"
-import {getFeatureData,getDashBoardDataAcrossProject,getProjectData} from "../services/eventServices.js"
+import {getFeatureData,getDashBoardDataAcrossProject,getDashBoardKeyInsights,getProjectData,getProjectInsights} from "../services/eventServices.js"
 
 
 //deduplication middleware to prevent storing duplicate and clicks that are tied to page views
@@ -34,6 +34,20 @@ export async function fetchDashboard(req,res){
     
 }
 
+export async function fetchDashboardInisights(req,res){
+    try {
+        const {keyInsights}=await getDashBoardKeyInsights()
+        //console.log(summaryData,leastUsedFeatures)
+        return res.status(200).json({
+            keyInsights:keyInsights,
+        })        
+    } catch (error) {
+        console.log("Error:",error)
+        res.status(500).json({error:error})
+    }
+    
+}
+
 export async function fetchProjectData(req,res){
     try {
        const {projectKey}=req.body
@@ -46,6 +60,31 @@ export async function fetchProjectData(req,res){
             //console.log("Project Data:",projectData)
 
             return res.status(200).json({projectData,success:true})
+        }else{
+            return res.status(400).json({message:"Project not saved on Cinalytics",success:false})
+        }
+    }else{
+        return res.status(400).json({message:"Project Key not found",success:false})
+    } 
+    } catch (error) {
+        console.log("Error:",error)
+        res.status(500).json({error:error})
+    }
+    
+    
+}
+
+export async function fetchProjectInsights(req,res){
+    try {
+       const {projectKey}=req.body
+       //console.log(projectKey)
+    if(projectKey){
+        const project=await getProjectByProjectKey(projectKey)
+        //console.log('Project Found:',project)
+        if(project){
+            const projectInsights=await getProjectInsights(projectKey)
+            //console.log("Project Data:",projectInsights)
+            return res.status(200).json({projectInsights:projectInsights,success:true})
         }else{
             return res.status(400).json({message:"Project not saved on Cinalytics",success:false})
         }

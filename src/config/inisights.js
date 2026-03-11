@@ -67,7 +67,7 @@ export async function getKeyInsightProjectOverview(projectData) {
               - Potential concerns or red flags
               - Strategic recommendations for improvement
               
-              Return insights as a JSON object with an "insights" array containing strings, each starting with an emoji.
+              Return insights as a JSON object with an "insights" array containing strings.
               Make insights actionable and specific to this project.
               \n\n${generateProjectOverviewPrompt(projectData)}` // ✅ Using NEW overview prompt
             }
@@ -197,21 +197,20 @@ ${latestMonthData.sort((a, b) => b.project_interactions - a.project_interactions
 
 Based on this portfolio data, provide 4-6 strategic insights about:
 
-1. 📊 **Portfolio Health**: Overall assessment of the project portfolio
-2. 🚀 **Growth Opportunities**: Which projects show the most potential?
-3. ⚠️ **Risk Areas**: Projects or features that need attention
-4. 💡 **Feature Optimization**: How to improve adoption of underutilized features
-5. 📈 **Engagement Patterns**: Trends in user activity across projects
-6. 🎯 **Recommendations**: 2-3 actionable next steps for the portfolio
+1. **Portfolio Health**: Overall assessment of the project portfolio
+2. **Growth Opportunities**: Which projects show the most potential?
+3. **Risk Areas**: Projects or features that need attention
+4. **Feature Optimization**: How to improve adoption of underutilized features
+5. **Engagement Patterns**: Trends in user activity across projects
+6. **Recommendations**: 2-3 actionable next steps for the portfolio
 
 Return a JSON object with an "insights" array containing these insights. Each insight must:
-- Start with an appropriate emoji
 - Be specific and data-driven
 - Reference actual numbers from the data
 - Include actionable observations
 
 Example insights:
-"📊 Your portfolio has ${summaryData.active_projects || '0'} active projects with ${summaryData.active_users || '0'} total users - consider cross-promotion strategies to increase user adoption across projects."
-"⚠️ ${projectsWithUnusedFeatures[0]?.name || 'A project'} has ${projectsWithUnusedFeatures[0]?.count || '0'} underutilized features. Consider A/B testing feature discovery or removing low-value features."
-"📈 Overall portfolio interactions are ${totalInteractionsTrend} - ${totalInteractionsTrend === 'growing' ? 'great momentum!' : 'consider investigating what\'s causing the decline.'}"`;
+" Your portfolio has ${summaryData.active_projects || '0'} active projects with ${summaryData.active_users || '0'} total users - consider cross-promotion strategies to increase user adoption across projects."
+" ${projectsWithUnusedFeatures[0]?.name || 'A project'} has ${projectsWithUnusedFeatures[0]?.count || '0'} underutilized features. Consider A/B testing feature discovery or removing low-value features."
+" Overall portfolio interactions are ${totalInteractionsTrend} - ${totalInteractionsTrend === 'growing' ? 'great momentum!' : 'consider investigating what\'s causing the decline.'}"`;
 }
