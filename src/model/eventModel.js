@@ -817,7 +817,7 @@ FROM ranked_pages
 WHERE page_rank > 1
 AND project_key = $1
 
-ORDER BY project_key, month_bucket; ASC`,
+ORDER BY project_key, month_bucket ASC; `,
     [projectKey]
   );
   //console.log("pages:",result.rows)
