@@ -1,11 +1,11 @@
 // routes/projectInsights.js
 import { GoogleGenerativeAI } from '@google/generative-ai';
-
+import {insertInsights} from '../model/eventModel.js'
 // Initialize Gemini client
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // FUNCTION 1: For feature/page insights (your existing one)
-export async function getProjectInsights(projectData) {
+export async function getProjectInsights(projectData,projectKey) {
   try {
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash", // Changed from 2.5 to stable version
@@ -33,7 +33,9 @@ export async function getProjectInsights(projectData) {
     const response = result.response;
     const text = response.text();
     const insights = JSON.parse(text);
-    return insights.insights;
+
+    const storedInsights=await insertInsights(projectKey,insights.insights)
+    return storedInsights.insights;
 
   } catch (error) {
     console.error('Insights generation failed:', error);

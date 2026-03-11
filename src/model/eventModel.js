@@ -839,6 +839,35 @@ ORDER BY project_key, month_bucket,page_visits DESC; `,
   return result.rows
 }
 
+export async function getInsightsByProjectKey(projectKey) {
+  const result = await pool.query(`SELECT * FROM project_key_insights WHERE project_key=$1`,[projectKey])
+  //console.log(result.rows[0])
+  return result.rows[0]
+}
+export async function insertInsights(projectKey,insights) {
+  const result = await pool.query(`
+    -- Insert insights for the specific project with emojis removed
+  INSERT INTO project_key_insights (
+      project_key, 
+      insights, 
+      created_at
+  )
+  VALUES (
+      $1,
+      $2,
+      CURRENT_TIMESTAMP
+  )
+  RETURNING *
+  ;`,[projectKey,insights])
+  //console.log(result.rows[0])
+  if(result.rows.length>0){
+      return result.rows[0]
+  }else{
+    return false
+  }
+
+}
+//getInsightsByProjectKey('proj_749d62a894383850')
 //This route here is like a middleware
 //to preprocess the events before they get to the databse/
 //it checks for duplicate events, keeps the first one and deletes the other ones

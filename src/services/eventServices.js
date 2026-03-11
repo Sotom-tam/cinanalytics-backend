@@ -1,5 +1,5 @@
 import {getProjectSummaryData,getProjectFeatureData,getSummaryStats,getTop3PerformingProjects,getProjectByProjectKey,getLeastUsedFeatures,getAllFeatures} from "../model/eventModel.js"
-import {getDuplicateEvents,getClicksAfterPageView,deleteEventById} from "../model/eventModel.js"
+import {getDuplicateEvents,getClicksAfterPageView,deleteEventById,getInsightsByProjectKey} from "../model/eventModel.js"
 import {getLeastUsedFeaturesByProject,getMostUsedFeaturesByProject,getLeastVisitedPagesByProject,getMostVisitedPagesByProject} from "../model/eventModel.js"
 import {getProjectInsights,getKeyInsightProjectOverview} from "../config/inisights.js"
 export async function getFeatureData() {
@@ -70,29 +70,66 @@ export async function getProjectData(projectKey){
     }
 }
 
+
 export async function getProjectInsightsData(projectKey){
-    const allProjectData= await getProjectSummaryData()
-    const projectData= allProjectData.find((project)=>{
-        return project.project_key===projectKey
-    })
-    const allfeatures= await getProjectFeatureData()
-    const projectFeature= allfeatures.find((project)=>{
-        return project.project_key===projectKey
-    })
-    const projectOverview=await getProjectByProjectKey(projectKey)
-    const mostUsedFeatures=await getMostUsedFeaturesByProject(projectKey)
-    const leastUsedFeatures=await getLeastUsedFeaturesByProject(projectKey)
-    const mostVisitedPages=await getMostVisitedPagesByProject(projectKey)
-    const leastVisitedPages=await getLeastVisitedPagesByProject(projectKey)
-    const keyInsights=await getProjectInsights({
-        projectData:projectData,
-        projectOverview:projectOverview,
-        projectFeature:projectFeature,
-        mostUsedFeatures: mostUsedFeatures,
-        leastUsedFeatures:leastUsedFeatures,
-        mostVisitedPages:mostVisitedPages,
-        leastVisitedPages:leastVisitedPages,
-    })
+    const currentDate=Date.now()
+    const sevenDays = 7 * 24 * 60 * 60 * 1000
+    try {
+        const insights=getInsightsByProjectKey(projectKey)
+        let keyInsights
+        if(insights){
+        if(currentDate>=insights.created_at+sevenDays) {//generate new insights
+            const allProjectData= await getProjectSummaryData()
+            const projectData= allProjectData.find((project)=>{
+                return project.project_key===projectKey
+            })
+            const allfeatures= await getProjectFeatureData()
+            const projectFeature= allfeatures.find((project)=>{
+                return project.project_key===projectKey
+            })
+            const projectOverview=await getProjectByProjectKey(projectKey)
+            const mostUsedFeatures=await getMostUsedFeaturesByProject(projectKey)
+            const leastUsedFeatures=await getLeastUsedFeaturesByProject(projectKey)
+            const mostVisitedPages=await getMostVisitedPagesByProject(projectKey)
+            const leastVisitedPages=await getLeastVisitedPagesByProject(projectKey)
+            keyInsights=await getProjectInsights({
+                projectData:projectData,
+                projectOverview:projectOverview,
+                projectFeature:projectFeature,
+                mostUsedFeatures: mostUsedFeatures,
+                leastUsedFeatures:leastUsedFeatures,
+                mostVisitedPages:mostVisitedPages,
+                leastVisitedPages:leastVisitedPages,
+            },projectKey)
+            return {keyInsights:keyInsights,}
+        }else{
+            insights=await getInsightsByProjectKey(projectKey)
+            return {keyInsights:insights.insights}
+        }}else{//generate new insights
+            const allProjectData= await getProjectSummaryData()
+            const projectData= allProjectData.find((project)=>{
+                return project.project_key===projectKey
+            })
+            const allfeatures= await getProjectFeatureData()
+            const projectFeature= allfeatures.find((project)=>{
+                return project.project_key===projectKey
+            })
+            const projectOverview=await getProjectByProjectKey(projectKey)
+            const mostUsedFeatures=await getMostUsedFeaturesByProject(projectKey)
+            const leastUsedFeatures=await getLeastUsedFeaturesByProject(projectKey)
+            const mostVisitedPages=await getMostVisitedPagesByProject(projectKey)
+            const leastVisitedPages=await getLeastVisitedPagesByProject(projectKey)
+            keyInsights=await getProjectInsights({
+                projectData:projectData,
+                projectOverview:projectOverview,
+                projectFeature:projectFeature,
+                mostUsedFeatures: mostUsedFeatures,
+                leastUsedFeatures:leastUsedFeatures,
+                mostVisitedPages:mostVisitedPages,
+                leastVisitedPages:leastVisitedPages,
+            },projectKey)
+            return {keyInsights:keyInsights,}
+        }
     //console.log(keyInsights)
     // console.log("Project Overview:",projectOverview,"\n",
     //      "Project Data:",projectData,"\n",
@@ -101,9 +138,11 @@ export async function getProjectInsightsData(projectKey){
     //    "Most Visited Pages:",mostVisitedPages,"\n",
     //    "Least Visited Pages:",leastVisitedPages
     // )
-    return {
-        keyInsights:keyInsights
+    } catch (error) {
+        console.log(error)
+        return error
     }
+    
 }
 
 
