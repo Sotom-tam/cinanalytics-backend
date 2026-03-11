@@ -609,50 +609,84 @@ page_interactions AS (
   GROUP BY project_key, page_name, month_bucket
 ),
 
+/* NEW: total interactions per project per month */
+project_month_totals AS (
+  SELECT
+    project_key,
+    month_bucket,
+    SUM(page_interactions) AS total_project_interactions_month
+  FROM page_interactions
+  GROUP BY project_key, month_bucket
+),
+
 ranked_pages AS (
   SELECT
-    page_interactions.project_key,
-    page_interactions.page_name,
-    page_interactions.month_bucket,
-    page_interactions.page_interactions,
-    page_interactions.unique_users,
-    COALESCE(ROUND(AVG(page_times.time_on_page_seconds),2),0) AS avg_seconds_on_page,
+    pi.project_key,
+    pi.page_name,
+    pi.month_bucket,
+    pi.page_interactions,
+    pi.unique_users,
+    pmt.total_project_interactions_month,
+
+    ROUND(
+      (pi.page_interactions * 100.0) /
+      pmt.total_project_interactions_month,
+      2
+    ) AS feature_usage_percent,
+
+    COALESCE(ROUND(AVG(pt.time_on_page_seconds),2),0) AS avg_seconds_on_page,
+
     RANK() OVER (
-      PARTITION BY page_interactions.project_key, page_interactions.month_bucket
-      ORDER BY page_interactions.page_interactions DESC
+      PARTITION BY pi.project_key, pi.month_bucket
+      ORDER BY pi.page_interactions DESC
     ) AS page_rank
-  FROM page_interactions
-  LEFT JOIN page_times
-    ON page_interactions.project_key = page_times.project_key
-    AND page_interactions.page_name = page_times.page_name
-    AND page_interactions.month_bucket = page_times.month_bucket
+
+  FROM page_interactions pi
+
+  LEFT JOIN page_times pt
+    ON pi.project_key = pt.project_key
+    AND pi.page_name = pt.page_name
+    AND pi.month_bucket = pt.month_bucket
+
+  JOIN project_month_totals pmt
+    ON pi.project_key = pmt.project_key
+    AND pi.month_bucket = pmt.month_bucket
+
   GROUP BY
-    page_interactions.project_key,
-    page_interactions.page_name,
-    page_interactions.month_bucket,
-    page_interactions.page_interactions,
-    page_interactions.unique_users
+    pi.project_key,
+    pi.page_name,
+    pi.month_bucket,
+    pi.page_interactions,
+    pi.unique_users,
+    pmt.total_project_interactions_month
 )
 
 SELECT
-  ranked_pages.project_key,
-  ranked_pages.page_name,
-  TO_CHAR(ranked_pages.month_bucket,'Month') AS month_name,
-  TO_CHAR(ranked_pages.month_bucket,'YYYY') AS year,
+  project_key,
+  page_name,
+  TO_CHAR(month_bucket,'Month') AS month_name,
+  TO_CHAR(month_bucket,'YYYY') AS year,
+
   CASE
-  WHEN EXTRACT(MONTH FROM ranked_pages.month_bucket) BETWEEN 1 AND 3 THEN 'Q1'
-  WHEN EXTRACT(MONTH FROM ranked_pages.month_bucket) BETWEEN 4 AND 6 THEN 'Q2'
-  WHEN EXTRACT(MONTH FROM ranked_pages.month_bucket) BETWEEN 7 AND 9 THEN 'Q3'
-  WHEN EXTRACT(MONTH FROM ranked_pages.month_bucket) BETWEEN 10 AND 12 THEN 'Q4'
-END AS quarter,
-  ranked_pages.avg_seconds_on_page,
-  ranked_pages.page_interactions AS pages_visits,
-  ranked_pages.unique_users,
-  ranked_pages.page_rank
+    WHEN EXTRACT(MONTH FROM month_bucket) BETWEEN 1 AND 3 THEN 'Q1'
+    WHEN EXTRACT(MONTH FROM month_bucket) BETWEEN 4 AND 6 THEN 'Q2'
+    WHEN EXTRACT(MONTH FROM month_bucket) BETWEEN 7 AND 9 THEN 'Q3'
+    WHEN EXTRACT(MONTH FROM month_bucket) BETWEEN 10 AND 12 THEN 'Q4'
+  END AS quarter,
+
+  avg_seconds_on_page,
+  page_interactions AS page_visits,
+  total_project_interactions_month,
+  feature_usage_percent,
+  unique_users,
+  page_rank
+
 FROM ranked_pages
-WHERE ranked_pages.page_rank < 2   -- only top pages per project/month
-AND project_key=$1
-ORDER BY ranked_pages.project_key, ranked_pages.month_bucket;`,
+
+WHERE page_rank =1
+AND project_key = $1
+
+ORDER BY project_key, month_bucket ASC;`,
     [projectKey]
   );
   //console.log("pages:",result.rows)
@@ -783,7 +817,7 @@ FROM ranked_pages
 WHERE page_rank > 1
 AND project_key = $1
 
-ORDER BY project_key, month_bucket;`,
+ORDER BY project_key, month_bucket; ASC`,
     [projectKey]
   );
   //console.log("pages:",result.rows)
