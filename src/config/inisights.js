@@ -21,7 +21,7 @@ export async function getProjectInsights(projectData,projectKey) {
           parts: [
             {
               text: `You are a product analytics expert. Generate 5-7 key insights about a project's feature usage and page performance. 
-              Return insights as a JSON object with an "insights" array containing strings, each starting with an emoji. Keep insights concise and data-driven.
+              Return insights as a JSON object with an "insights" array containing strings. Keep insights concise and data-driven.
               \n\n${generateFeatureInsightsPrompt(projectData)}` // ✅ Using feature insights prompt
             }
           ]
@@ -70,7 +70,7 @@ export async function getKeyInsightProjectOverview(projectData) {
               
               Return insights as a JSON object with an "insights" array containing strings.
               Make insights actionable and specific to this project.
-              \n\n${generateProjectOverviewPrompt(projectData)}` // ✅ Using NEW overview prompt
+              \n\n${generateProjectOverviewPrompt(projectData)}` //Using NEW overview prompt
             }
           ]
         }
@@ -115,7 +115,7 @@ PAGE PERFORMANCE:
 - Most visited: ${data.mostVisitedPages?.[0]?.page_name || 'N/A'} (${data.mostVisitedPages?.[0]?.page_visits || '0'} visits)
 - Least visited: ${data.leastVisitedPages?.[0]?.page_name || 'N/A'} (${data.leastVisitedPages?.[0]?.page_visits || '0'} visits)
 
-Return a JSON object with an "insights" array containing 5-7 insight strings, each starting with an appropriate emoji.`;
+Return a JSON object with an "insights" array containing 5-7 insight strings.`;
 }
 
 // PROMPT 2: NEW prompt for project overview/details page

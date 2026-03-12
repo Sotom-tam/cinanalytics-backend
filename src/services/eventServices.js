@@ -83,7 +83,7 @@ export async function getProjectInsightsData(projectKey){
             keyInsights=await getProjectInsights(projectData,projectKey)
             return keyInsights
         }else{
-            console.log(insights)
+            //console.log(insights)
             return insights.insights
         }}else{//generate new insights if they don't already exist
             const projectData= await getProjectData(projectKey)
