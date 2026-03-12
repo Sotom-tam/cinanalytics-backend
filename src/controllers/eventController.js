@@ -83,7 +83,7 @@ export async function fetchProjectInsights(req,res){
         //console.log('Project Found:',project)
         if(project){
             const projectInsights=await getProjectInsightsData(projectKey)
-            //console.log("Project Data:",projectInsights)
+            console.log("Project Insights:",projectInsights)
             return res.status(200).json({projectInsights:projectInsights,success:true})
         }else{
             return res.status(400).json({message:"Project not saved on Cinalytics",success:false})

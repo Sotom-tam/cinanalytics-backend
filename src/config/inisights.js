@@ -14,7 +14,6 @@ export async function getProjectInsights(projectData,projectKey) {
         responseMimeType: "application/json",
       }
     });
-    
     const result = await model.generateContent({
       contents: [
         {

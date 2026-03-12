@@ -75,69 +75,22 @@ export async function getProjectInsightsData(projectKey){
     const currentDate=Date.now()
     const sevenDays = 7 * 24 * 60 * 60 * 1000
     try {
-        const insights=getInsightsByProjectKey(projectKey)
+        const insights= await getInsightsByProjectKey(projectKey)
         let keyInsights
         if(insights){
         if(currentDate>=insights.created_at+sevenDays) {//generate new insights
-            const allProjectData= await getProjectSummaryData()
-            const projectData= allProjectData.find((project)=>{
-                return project.project_key===projectKey
-            })
-            const allfeatures= await getProjectFeatureData()
-            const projectFeature= allfeatures.find((project)=>{
-                return project.project_key===projectKey
-            })
-            const projectOverview=await getProjectByProjectKey(projectKey)
-            const mostUsedFeatures=await getMostUsedFeaturesByProject(projectKey)
-            const leastUsedFeatures=await getLeastUsedFeaturesByProject(projectKey)
-            const mostVisitedPages=await getMostVisitedPagesByProject(projectKey)
-            const leastVisitedPages=await getLeastVisitedPagesByProject(projectKey)
-            keyInsights=await getProjectInsights({
-                projectData:projectData,
-                projectOverview:projectOverview,
-                projectFeature:projectFeature,
-                mostUsedFeatures: mostUsedFeatures,
-                leastUsedFeatures:leastUsedFeatures,
-                mostVisitedPages:mostVisitedPages,
-                leastVisitedPages:leastVisitedPages,
-            },projectKey)
-            return {keyInsights:keyInsights,}
+            const projectData=await getProjectData(projectKey)
+            keyInsights=await getProjectInsights(projectData,projectKey)
+            return keyInsights
         }else{
-            insights=await getInsightsByProjectKey(projectKey)
-            return {keyInsights:insights.insights}
-        }}else{//generate new insights
-            const allProjectData= await getProjectSummaryData()
-            const projectData= allProjectData.find((project)=>{
-                return project.project_key===projectKey
-            })
-            const allfeatures= await getProjectFeatureData()
-            const projectFeature= allfeatures.find((project)=>{
-                return project.project_key===projectKey
-            })
-            const projectOverview=await getProjectByProjectKey(projectKey)
-            const mostUsedFeatures=await getMostUsedFeaturesByProject(projectKey)
-            const leastUsedFeatures=await getLeastUsedFeaturesByProject(projectKey)
-            const mostVisitedPages=await getMostVisitedPagesByProject(projectKey)
-            const leastVisitedPages=await getLeastVisitedPagesByProject(projectKey)
-            keyInsights=await getProjectInsights({
-                projectData:projectData,
-                projectOverview:projectOverview,
-                projectFeature:projectFeature,
-                mostUsedFeatures: mostUsedFeatures,
-                leastUsedFeatures:leastUsedFeatures,
-                mostVisitedPages:mostVisitedPages,
-                leastVisitedPages:leastVisitedPages,
-            },projectKey)
-            return {keyInsights:keyInsights,}
+            console.log(insights)
+            return insights.insights
+        }}else{//generate new insights if they don't already exist
+            const projectData= await getProjectData(projectKey)
+            keyInsights=await getProjectInsights(projectData,projectKey)
+            console.log("Insights:",keyInsights)
+            return keyInsights
         }
-    //console.log(keyInsights)
-    // console.log("Project Overview:",projectOverview,"\n",
-    //      "Project Data:",projectData,"\n",
-    //    "Most Used Features:", mostUsedFeatures,"\n",
-    //    "Least Used Features:",leastUsedFeatures,"\n",
-    //    "Most Visited Pages:",mostVisitedPages,"\n",
-    //    "Least Visited Pages:",leastVisitedPages
-    // )
     } catch (error) {
         console.log(error)
         return error
