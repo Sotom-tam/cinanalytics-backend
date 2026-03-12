@@ -358,11 +358,12 @@ ORDER BY COALESCE(tw.interactions_this_week, 0) DESC;`)
   return result.rows
 }
 //getProjectSummaryData()
-
+// const cutoff = Date.now() - (7 * 24 * 60 * 60 * 1000)
+// console.log(cutoff)
 export async function getProjectFeatureData(){
   const cutoff = Date.now() - (7 * 24 * 60 * 60 * 1000);
   const result = await pool.query(`
-      WITH feature_usage AS (
+    WITH feature_usage AS (
     SELECT
       events.project_key,
       projects.project_name,
@@ -757,7 +758,8 @@ LEFT JOIN page_year_totals
   ON ranked_pages_with_max.project_key = page_year_totals.project_key
   AND ranked_pages_with_max.page_name = page_year_totals.page_name
   AND DATE_TRUNC('year', ranked_pages_with_max.month_bucket) = page_year_totals.year_start
-WHERE ranked_pages_with_max.page_rank<CEIL(ranked_pages_with_max.max_rank/2.0)
+WHERE ranked_pages_with_max.project_key=$1
+AND ranked_pages_with_max.page_rank<CEIL(ranked_pages_with_max.max_rank/2.0)
 ORDER BY 
   ranked_pages_with_max.project_key, 
   ranked_pages_with_max.month_bucket, 
@@ -963,7 +965,8 @@ LEFT JOIN page_year_totals
   ON ranked_pages_with_max.project_key = page_year_totals.project_key
   AND ranked_pages_with_max.page_name = page_year_totals.page_name
   AND DATE_TRUNC('year', ranked_pages_with_max.month_bucket) = page_year_totals.year_start
-WHERE ranked_pages_with_max.page_rank>CEIL(ranked_pages_with_max.max_rank/2.0)
+WHERE ranked_pages_with_max.project_key=$1
+AND ranked_pages_with_max.page_rank>CEIL(ranked_pages_with_max.max_rank/2.0)
 ORDER BY 
   ranked_pages_with_max.project_key, 
   ranked_pages_with_max.month_bucket, 
