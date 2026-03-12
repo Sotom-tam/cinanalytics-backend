@@ -88,7 +88,7 @@ export async function getProjectInsightsData(projectKey){
         }}else{//generate new insights if they don't already exist
             const projectData= await getProjectData(projectKey)
             keyInsights=await getProjectInsights(projectData,projectKey)
-            console.log("Insights:",keyInsights)
+            //console.log("Insights:",keyInsights)
             return keyInsights
         }
     } catch (error) {
