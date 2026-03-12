@@ -89,6 +89,7 @@ export async function getKeyInsightProjectOverview(projectData) {
 }
 
 // PROMPT 1: For feature/page insights (renamed from generatePrompt)
+// PROMPT 1: For feature/page insights (updated for concise, picture-style format)
 function generateFeatureInsightsPrompt(data) {
   return `Generate key insights for the project "${data.projectData?.project_name || 'Unknown'}" based on this data:
 
@@ -115,11 +116,24 @@ PAGE PERFORMANCE:
 - Most visited: ${data.mostVisitedPages?.[0]?.page_name || 'N/A'} (${data.mostVisitedPages?.[0]?.page_visits || '0'} visits)
 - Least visited: ${data.leastVisitedPages?.[0]?.page_name || 'N/A'} (${data.leastVisitedPages?.[0]?.page_visits || '0'} visits)
 
-Return a JSON object with an "insights" array containing 5-7 insight strings.`;
+Return a JSON object with an "insights" array containing 5-7 insight strings.
+
+IMPORTANT: Each insight must follow this EXACT format:
+- Be concise and punchy (one line only, no periods at the end)
+- Start with the key metric or finding
+- Be data-driven and specific
+- No explanations or fluff
+- Match the style of these examples:
+  "Features on the dashboard page receive 40% more interactions"
+  "Search Bar drives 24% more engagement than other features"
+  "Feature X hasn't been used in 14 days"
+
+Example of what I want: "Weekly interactions down 86.4% and active users dropped from 5 to 1"`;
 }
 
 // PROMPT 2: NEW prompt for project overview/details page
 // NEW prompt function for project overview insights - updated for the new data structure
+// PROMPT 2: NEW prompt for project overview/details page - updated for picture-style format
 function generateProjectOverviewPrompt(data) {
   const summaryData = data.summaryData || {};
   const leastUsedFeatures = data.leastUsedFeatures || [];
@@ -196,22 +210,25 @@ ${latestMonthData.sort((a, b) => b.project_interactions - a.project_interactions
   `- ${i+1}. ${p.project_name}: ${p.project_interactions} interactions`
 ).join('\n')}
 
-Based on this portfolio data, provide 4-6 strategic insights about:
+Based on this portfolio data, provide 4 strategic insights.
 
-1. **Portfolio Health**: Overall assessment of the project portfolio
-2. **Growth Opportunities**: Which projects show the most potential?
-3. **Risk Areas**: Projects or features that need attention
-4. **Feature Optimization**: How to improve adoption of underutilized features
-5. **Engagement Patterns**: Trends in user activity across projects
-6. **Recommendations**: 2-3 actionable next steps for the portfolio
+IMPORTANT FORMATTING RULES:
+Each insight must be:
+- ONE LINE ONLY, no periods at the end
+- Start with the key finding or metric
+- Concise and punchy like these examples:
+  "Features on the dashboard page receive 40% more interactions"
+  "Search Bar drives 24% more engagement than other features"
+  "Feature X hasn't been used in 14 days"
 
-Return a JSON object with an "insights" array containing these insights. Each insight must:
-- Be specific and data-driven
-- Reference actual numbers from the data
-- Include actionable observations
+Cover these areas in your insights:
+1. Portfolio health (overall assessment)
+2. Growth opportunities (which projects show most potential)
+3. Feature optimization (how to improve adoption)
+4. One actionable recommendation
 
-Example insights:
-" Your portfolio has ${summaryData.active_projects || '0'} active projects with ${summaryData.active_users || '0'} total users - consider cross-promotion strategies to increase user adoption across projects."
-" ${projectsWithUnusedFeatures[0]?.name || 'A project'} has ${projectsWithUnusedFeatures[0]?.count || '0'} underutilized features. Consider A/B testing feature discovery or removing low-value features."
-" Overall portfolio interactions are ${totalInteractionsTrend} - ${totalInteractionsTrend === 'growing' ? 'great momentum!' : 'consider investigating what\'s causing the decline.'}"`;
+Example of desired format: 
+"Your portfolio has 5 active projects with 127 total users - consider cross-promotion strategies"
+"Project X has 8 underutilized features including Dashboard and Profile settings"
+"Overall portfolio interactions are growing 23% month-over-month"`;
 }
