@@ -361,44 +361,79 @@ ORDER BY COALESCE(tw.interactions_this_week, 0) DESC;`)
 // const cutoff = Date.now() - (7 * 24 * 60 * 60 * 1000)
 // console.log(cutoff)
 export async function getProjectFeatureData(){
-  const cutoff = Date.now() - (7 * 24 * 60 * 60 * 1000);
   const result = await pool.query(`
     WITH feature_usage AS (
-    SELECT
-      events.project_key,
-      projects.project_name,
-      events.feature_key,
-      events.feature_name,
-      COUNT(*) AS total_interactions,
-      COUNT(DISTINCT events.visitor_id) AS unique_users,
-      -- Categorize features based on usage
-      CASE 
-        WHEN COUNT(*) = 1 THEN 'unused'
-        WHEN COUNT(*) < 3 THEN 'least_used'
-        ELSE 'active'
-      END AS feature_status
-    FROM events
-    JOIN projects ON events.project_key = projects.project_key
-    WHERE 
-      events.timestamp >= $1
-      AND events.feature_key IS NOT NULL
-    GROUP BY 
-      events.project_key, 
-      projects.project_name,
-      projects.project_icon,
-      events.feature_key, 
-      events.feature_name
-  )
-  SELECT 
-    project_key,
-    project_name,
-    COUNT(*) AS total_features,
-    COUNT(CASE WHEN feature_status = 'active' THEN 1 END) AS active_features,
-    COUNT(CASE WHEN feature_status = 'least_used' THEN 1 END) AS least_used_features,
-    COUNT(CASE WHEN feature_status = 'unused' THEN 1 END) AS unused_features  
+  SELECT
+    events.project_key,
+    projects.project_name,
+    projects.project_icon,
+    events.feature_key,
+    events.feature_name,
+    COUNT(*) AS total_interactions,
+    COUNT(DISTINCT events.visitor_id) AS unique_users,
+    MIN(events.timestamp) AS first_used,
+    MAX(events.timestamp) AS last_used
+  FROM events
+  JOIN projects ON events.project_key = projects.project_key
+  WHERE events.feature_key IS NOT NULL
+    AND events.feature_key != ''
+  GROUP BY 
+    events.project_key, 
+    projects.project_name,
+    projects.project_icon,
+    events.feature_key, 
+    events.feature_name
+),
+
+ranked_features AS (
+  SELECT
+    *,
+    -- Rank features within each project
+    RANK() OVER (
+      PARTITION BY project_key 
+      ORDER BY total_interactions ASC
+    ) AS rank_least_used,
+    RANK() OVER (
+      PARTITION BY project_key 
+      ORDER BY total_interactions DESC
+    ) AS rank_most_used,
+    -- Count total features per project
+    COUNT(*) OVER (
+      PARTITION BY project_key
+    ) AS total_features_in_project,
+    -- Proper categorization based on total_interactions
+    CASE 
+      WHEN total_interactions = 1 THEN 'unused'
+      WHEN total_interactions <= 3 THEN 'least_used'
+      ELSE 'active'
+    END AS feature_status
   FROM feature_usage
-  GROUP BY project_key, project_name
-  ORDER BY active_features DESC;`,[cutoff])
+)
+
+SELECT 
+  project_key,
+  project_name,
+  project_icon,
+  COUNT(*) AS total_features,
+  COUNT(CASE WHEN feature_status = 'active' THEN 1 END) AS active_features,
+  COUNT(CASE WHEN feature_status = 'least_used' THEN 1 END) AS least_used_features,
+  COUNT(CASE WHEN feature_status = 'unused' THEN 1 END) AS unused_features,
+
+  -- Get the most recent unused feature
+  MAX(CASE WHEN feature_status = 'unused' THEN feature_name END) AS unused_feature_example,
+  -- Summary statistics
+  ROUND(AVG(total_interactions), 2) AS avg_interactions_per_feature,
+  SUM(total_interactions) AS total_project_interactions,
+  COUNT(DISTINCT CASE WHEN feature_status != 'unused' THEN feature_key END) AS features_with_usage
+FROM ranked_features
+GROUP BY 
+  project_key, 
+  project_name,
+  project_icon
+ORDER BY 
+  active_features DESC,
+  unused_features ASC;
+`)
   //console.log(result.rows)
   return result.rows
 }
