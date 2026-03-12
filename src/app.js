@@ -25,7 +25,7 @@ app.use(cors({
     origin:allowedOrigins.push('https://cin-analytics.vercel.app'),
     credentials:true
 }))
-console.log("Allowed Origins:",allowedOrigins)
+//console.log("Allowed Origins:",allowedOrigins)
 
 const isProd = process.env.PRODUCTION === "production";
 //console.log(isProd)

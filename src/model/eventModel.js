@@ -632,7 +632,7 @@ project_month_totals AS (
   SELECT
     project_key,
     month_bucket,
-    COUNT(*) AS total_project_interactions_month
+    COUNT(*) AS page_visits_month
   FROM page_views
   GROUP BY project_key, month_bucket
 ),
@@ -642,7 +642,7 @@ distinct_month_totals AS (
   SELECT DISTINCT
     project_key,
     month_bucket,
-    total_project_interactions_month
+    page_visits_month
   FROM project_month_totals
 ),
 
@@ -650,7 +650,7 @@ quarter_totals AS (
   SELECT 
     project_key,
     DATE_TRUNC('quarter', month_bucket) AS quarter_start,
-    SUM(total_project_interactions_month) AS total_interactions_quarter
+    SUM(page_visits_month) AS total_interactions_quarter
   FROM distinct_month_totals
   GROUP BY project_key, DATE_TRUNC('quarter', month_bucket)
 ),
@@ -660,7 +660,7 @@ year_totals AS (
   SELECT 
     project_key,
     DATE_TRUNC('year', month_bucket) AS year_start,
-    SUM(total_project_interactions_month) AS total_interactions_year
+    SUM(page_visits_month) AS total_interactions_year
   FROM distinct_month_totals
   GROUP BY project_key, DATE_TRUNC('year', month_bucket)
 ),
@@ -683,10 +683,10 @@ ranked_pages AS (
     page_interactions.month_bucket,
     page_interactions.page_interactions,
     page_interactions.unique_users,
-    project_month_totals.total_project_interactions_month,
+    project_month_totals.page_visits_month,
     ROUND(
       (page_interactions.page_interactions * 100.0) /
-      project_month_totals.total_project_interactions_month,
+      project_month_totals.page_visits_month,
       2
     ) AS feature_usage_percent,
     COALESCE(ROUND(AVG(page_times_with_fallback.time_on_page_seconds),2),0) AS avg_seconds_on_page,
@@ -696,7 +696,7 @@ ranked_pages AS (
     ) AS page_rank,
     COUNT(*) OVER (
       PARTITION BY page_interactions.project_key, page_interactions.month_bucket
-    ) AS total_pages_in_month
+    ) AS total_visits_month
   FROM page_interactions
   LEFT JOIN page_times_with_fallback
     ON page_interactions.project_key = page_times_with_fallback.project_key
@@ -711,7 +711,7 @@ ranked_pages AS (
     page_interactions.month_bucket,
     page_interactions.page_interactions,
     page_interactions.unique_users,
-    project_month_totals.total_project_interactions_month
+    project_month_totals.page_visits_month
 ),
 
 ranked_pages_with_max AS (
@@ -730,19 +730,19 @@ bottom_pages AS (
     page_name,
     month_bucket,
     page_rank,
-    total_pages_in_month,
+    total_visits_month,
     CASE
       -- For months with less than 2 pages, return all pages
-      WHEN total_pages_in_month <= 2 THEN 1
+      WHEN total_visits_month <= 2 THEN 1
       -- Otherwise, return pages with rank <= 2 (the bottom 2 least visited)
       ELSE page_rank
     END AS bottom_rank_filter
   FROM ranked_pages_with_max
   WHERE 
     -- You can change this to get different numbers of bottom pages
-    -- For bottom 2 pages: page_rank <= 2 OR total_pages_in_month <= 2
-    -- For bottom 3 pages: page_rank <= 3 OR total_pages_in_month <= 3
-    (page_rank <= 2 OR total_pages_in_month <= 2)
+    -- For bottom 2 pages: page_rank <= 2 OR total_visits_month <= 2
+    -- For bottom 3 pages: page_rank <= 3 OR total_visits_month <= 3
+    (page_rank <= 2 OR total_visits_month <= 2)
 )
 
 SELECT
@@ -765,13 +765,13 @@ SELECT
   ) AS page_visits_quarter,
   page_year_totals.page_visits_year,
   ranked_pages_with_max.max_rank,
-  ranked_pages_with_max.total_project_interactions_month,
+  ranked_pages_with_max.page_visits_month,
   quarter_totals.total_interactions_quarter AS total_visits_quarter,
   year_totals.total_interactions_year AS total_visits_year,
   ranked_pages_with_max.page_rank,
   ranked_pages_with_max.feature_usage_percent AS page_visit_percent,
   ranked_pages_with_max.unique_users,
-  ranked_pages_with_max.total_pages_in_month  -- Added for visibility
+  ranked_pages_with_max.total_visits_month  -- Added for visibility
 FROM ranked_pages_with_max
 LEFT JOIN quarter_totals
   ON ranked_pages_with_max.project_key = quarter_totals.project_key
@@ -790,7 +790,7 @@ INNER JOIN bottom_pages
   AND ranked_pages_with_max.month_bucket = bottom_pages.month_bucket
 WHERE 
   ranked_pages_with_max.project_key = $1
-  AND ranked_pages_with_max.total_project_interactions_month > 0
+  AND ranked_pages_with_max.page_visits_month > 0
 ORDER BY 
   ranked_pages_with_max.project_key, 
   ranked_pages_with_max.month_bucket, 
@@ -805,7 +805,7 @@ ORDER BY
 
 export async function getMostVisitedPagesByProject(projectKey) {
   const result = await pool.query(
-    `WITH pageviews AS (
+    `WITH page_views AS (
   SELECT
     project_key,
     visitor_id,
@@ -822,19 +822,38 @@ ordered_pageviews AS (
     LEAD(timestamp) OVER (
       PARTITION BY visitor_id
       ORDER BY timestamp
-    ) AS next_timestamp
-  FROM pageviews
+    ) AS next_timestamp,
+    ROW_NUMBER() OVER (
+      PARTITION BY visitor_id
+      ORDER BY timestamp DESC
+    ) = 1 AS is_last_pageview
+  FROM page_views
 ),
 
-page_times AS (
+-- Calculate time with fallback for last pageview
+page_times_with_fallback AS (
   SELECT
-    project_key,
-    page_name,
-    month_bucket,
-    (next_timestamp - timestamp)/1000.0 AS time_on_page_seconds
+    ordered_pageviews.project_key,
+    ordered_pageviews.page_name,
+    ordered_pageviews.month_bucket,
+    CASE
+      -- If we have a next timestamp and it's within 30 minutes, use the actual time
+      WHEN ordered_pageviews.next_timestamp IS NOT NULL 
+       AND (ordered_pageviews.next_timestamp - ordered_pageviews.timestamp) <= 30 * 60 * 1000
+      THEN (ordered_pageviews.next_timestamp - ordered_pageviews.timestamp)/1000.0
+      
+      -- If it's the last pageview, use a fallback (e.g., 60 seconds)
+      WHEN ordered_pageviews.is_last_pageview THEN 60.0
+      
+      -- If there's a next timestamp but it's >30 min, cap at 30 minutes
+      WHEN ordered_pageviews.next_timestamp IS NOT NULL 
+       AND (ordered_pageviews.next_timestamp - ordered_pageviews.timestamp) > 30 * 60 * 1000
+      THEN 30 * 60
+      
+      -- Otherwise, use a smaller fallback
+      ELSE 30.0
+    END AS time_on_page_seconds
   FROM ordered_pageviews
-  WHERE next_timestamp IS NOT NULL
-    AND (next_timestamp - timestamp) <= 30 * 60 * 1000
 ),
 
 page_interactions AS (
@@ -844,7 +863,7 @@ page_interactions AS (
     month_bucket,
     COUNT(*) AS page_interactions,
     COUNT(DISTINCT visitor_id) AS unique_users
-  FROM pageviews
+  FROM page_views
   GROUP BY project_key, page_name, month_bucket
 ),
 
@@ -852,9 +871,48 @@ project_month_totals AS (
   SELECT
     project_key,
     month_bucket,
-    SUM(page_interactions) AS total_project_interactions_month
-  FROM page_interactions
+    COUNT(*) AS page_visits_month
+  FROM page_views
   GROUP BY project_key, month_bucket
+),
+
+-- First, get distinct month totals for quarter aggregation
+distinct_month_totals AS (
+  SELECT DISTINCT
+    project_key,
+    month_bucket,
+    page_visits_month
+  FROM project_month_totals
+),
+
+quarter_totals AS (
+  SELECT 
+    project_key,
+    DATE_TRUNC('quarter', month_bucket) AS quarter_start,
+    SUM(page_visits_month) AS total_interactions_quarter
+  FROM distinct_month_totals
+  GROUP BY project_key, DATE_TRUNC('quarter', month_bucket)
+),
+
+-- Get distinct month totals for year aggregation
+year_totals AS (
+  SELECT 
+    project_key,
+    DATE_TRUNC('year', month_bucket) AS year_start,
+    SUM(page_visits_month) AS total_interactions_year
+  FROM distinct_month_totals
+  GROUP BY project_key, DATE_TRUNC('year', month_bucket)
+),
+
+-- Calculate page-level year totals correctly
+page_year_totals AS (
+  SELECT
+    project_key,
+    page_name,
+    DATE_TRUNC('year', month_bucket) AS year_start,
+    SUM(page_interactions) AS page_visits_year
+  FROM page_interactions
+  GROUP BY project_key, page_name, DATE_TRUNC('year', month_bucket)
 ),
 
 ranked_pages AS (
@@ -864,73 +922,123 @@ ranked_pages AS (
     page_interactions.month_bucket,
     page_interactions.page_interactions,
     page_interactions.unique_users,
-    project_month_totals.total_project_interactions_month,
-
+    project_month_totals.page_visits_month,
     ROUND(
       (page_interactions.page_interactions * 100.0) /
-      project_month_totals.total_project_interactions_month,
+      project_month_totals.page_visits_month,
       2
-    ) AS page_usage_percent,
-
-    COALESCE(ROUND(AVG(page_times.time_on_page_seconds),2),0) AS avg_seconds_on_page,
-
+    ) AS feature_usage_percent,
+    COALESCE(ROUND(AVG(page_times_with_fallback.time_on_page_seconds),2),0) AS avg_seconds_on_page,
+    -- For least visited pages (bottom N), use ASC order
     RANK() OVER (
       PARTITION BY page_interactions.project_key, page_interactions.month_bucket
       ORDER BY page_interactions.page_interactions ASC
-    ) AS page_rank
-  
+    ) AS page_rank_asc,
+    -- For most visited pages (top N), use DESC order  
+    RANK() OVER (
+      PARTITION BY page_interactions.project_key, page_interactions.month_bucket
+      ORDER BY page_interactions.page_interactions DESC
+    ) AS page_rank_desc,
+    COUNT(*) OVER (
+      PARTITION BY page_interactions.project_key, page_interactions.month_bucket
+    ) AS total_visits_month
   FROM page_interactions
-
-  LEFT JOIN page_times
-    ON page_interactions.project_key = page_times.project_key
-    AND page_interactions.page_name = page_times.page_name
-    AND page_interactions.month_bucket = page_times.month_bucket
-
+  LEFT JOIN page_times_with_fallback
+    ON page_interactions.project_key = page_times_with_fallback.project_key
+    AND page_interactions.page_name = page_times_with_fallback.page_name
+    AND page_interactions.month_bucket = page_times_with_fallback.month_bucket
   JOIN project_month_totals
     ON page_interactions.project_key = project_month_totals.project_key
     AND page_interactions.month_bucket = project_month_totals.month_bucket
-
   GROUP BY
     page_interactions.project_key,
     page_interactions.page_name,
     page_interactions.month_bucket,
     page_interactions.page_interactions,
     page_interactions.unique_users,
-    project_month_totals.total_project_interactions_month
+    project_month_totals.page_visits_month
 ),
+
 ranked_pages_with_max AS (
   SELECT
     *,
-    MAX(page_rank) OVER (
+    MAX(page_rank_asc) OVER (
       PARTITION BY project_key, month_bucket
     ) AS max_rank
   FROM ranked_pages
+),
+
+-- Filter for either most used or least used pages
+-- Change @rank_type to 'top' for most used, 'bottom' for least used
+filtered_pages AS (
+  SELECT
+    project_key,
+    page_name,
+    month_bucket,
+    page_rank_asc,
+    page_rank_desc,
+    total_visits_month,
+    -- For top N most used pages (rank_desc <= N)
+    CASE WHEN page_rank_desc <= 2 OR total_visits_month <= 2 THEN 1 ELSE 0 END AS is_top_page,
+    -- For bottom N least used pages (rank_asc <= N)  
+    CASE WHEN page_rank_asc <= 2 OR total_visits_month <= 2 THEN 1 ELSE 0 END AS is_bottom_page
+  FROM ranked_pages_with_max
 )
+
 SELECT
-  project_key,
-  page_name,
-  TO_CHAR(month_bucket,'Month') AS month_name,
-  TO_CHAR(month_bucket,'YYYY') AS year,
-
+  ranked_pages_with_max.project_key,
+  ranked_pages_with_max.page_name,
+  TO_CHAR(ranked_pages_with_max.month_bucket,'Month') AS month_name,
+  TO_CHAR(ranked_pages_with_max.month_bucket,'YYYY') AS year,
   CASE
-    WHEN EXTRACT(MONTH FROM month_bucket) BETWEEN 1 AND 3 THEN 'Q1'
-    WHEN EXTRACT(MONTH FROM month_bucket) BETWEEN 4 AND 6 THEN 'Q2'
-    WHEN EXTRACT(MONTH FROM month_bucket) BETWEEN 7 AND 9 THEN 'Q3'
-    WHEN EXTRACT(MONTH FROM month_bucket) BETWEEN 10 AND 12 THEN 'Q4'
+    WHEN EXTRACT(MONTH FROM ranked_pages_with_max.month_bucket) BETWEEN 1 AND 3 THEN 'Q1'
+    WHEN EXTRACT(MONTH FROM ranked_pages_with_max.month_bucket) BETWEEN 4 AND 6 THEN 'Q2'
+    WHEN EXTRACT(MONTH FROM ranked_pages_with_max.month_bucket) BETWEEN 7 AND 9 THEN 'Q3'
+    WHEN EXTRACT(MONTH FROM ranked_pages_with_max.month_bucket) BETWEEN 10 AND 12 THEN 'Q4'
   END AS quarter,
-
-  avg_seconds_on_page,
-  page_interactions AS page_visits,
-  page_rank,
-  total_project_interactions_month,
-  page_usage_percent,
-  unique_users
-
+  ranked_pages_with_max.avg_seconds_on_page,
+  ranked_pages_with_max.page_interactions AS page_visits_month,
+  SUM(ranked_pages_with_max.page_interactions) OVER (
+    PARTITION BY ranked_pages_with_max.project_key,
+    ranked_pages_with_max.page_name,
+    DATE_TRUNC('quarter', ranked_pages_with_max.month_bucket)
+  ) AS page_visits_quarter,
+  page_year_totals.page_visits_year,
+  ranked_pages_with_max.max_rank,
+  ranked_pages_with_max.page_visits_month,
+  quarter_totals.total_interactions_quarter AS total_visits_quarter,
+  year_totals.total_interactions_year AS total_visits_year,
+  ranked_pages_with_max.page_rank_asc AS page_rank,
+  ranked_pages_with_max.page_rank_desc AS page_rank_desc,  -- Added for visibility
+  ranked_pages_with_max.feature_usage_percent AS page_visit_percent,
+  ranked_pages_with_max.unique_users,
+  ranked_pages_with_max.total_visits_month
 FROM ranked_pages_with_max
-
-WHERE project_key = $1
-AND page_rank>CEIL((max_rank/2))
-ORDER BY project_key, month_bucket,page_visits DESC; `,
+LEFT JOIN quarter_totals
+  ON ranked_pages_with_max.project_key = quarter_totals.project_key
+  AND DATE_TRUNC('quarter', ranked_pages_with_max.month_bucket) = quarter_totals.quarter_start
+LEFT JOIN year_totals
+  ON ranked_pages_with_max.project_key = year_totals.project_key
+  AND DATE_TRUNC('year', ranked_pages_with_max.month_bucket) = year_totals.year_start
+LEFT JOIN page_year_totals
+  ON ranked_pages_with_max.project_key = page_year_totals.project_key
+  AND ranked_pages_with_max.page_name = page_year_totals.page_name
+  AND DATE_TRUNC('year', ranked_pages_with_max.month_bucket) = page_year_totals.year_start
+-- Join with filtered_pages to get either top or bottom pages
+INNER JOIN filtered_pages
+  ON ranked_pages_with_max.project_key = filtered_pages.project_key
+  AND ranked_pages_with_max.page_name = filtered_pages.page_name
+  AND ranked_pages_with_max.month_bucket = filtered_pages.month_bucket
+WHERE 
+  ranked_pages_with_max.project_key =$1
+  AND ranked_pages_with_max.page_visits_month > 0
+  -- Toggle which pages to show by uncommenting the appropriate line:
+  AND filtered_pages.is_top_page = 1  -- Show most used pages (top 2)
+  -- AND filtered_pages.is_bottom_page = 1  -- Show least used pages (bottom 2)
+ORDER BY 
+  ranked_pages_with_max.project_key, 
+  ranked_pages_with_max.month_bucket, 
+  ranked_pages_with_max.page_interactions DESC;  -- Order by most visits for top pages `,
     [projectKey]
   );
   //console.log("pages:",result.rows)
